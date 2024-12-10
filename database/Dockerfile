@@ -3,8 +3,8 @@ FROM postgres:17
 
 # Environment variables for database configuration
 ENV POSTGRES_DB=mydb
-ENV POSTGRES_USER=myuser
-ENV POSTGRES_PASSWORD=mypassword
+ENV POSTGRES_USER=postgresql
+ENV POSTGRES_PASSWORD=postgresql
 
 # Create directory for custom initialization scripts
 RUN mkdir -p /docker-entrypoint-initdb.d
