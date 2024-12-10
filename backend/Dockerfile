@@ -31,8 +31,11 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/target/release/backend ./backend
 
+# Set the Rocket address to listen on all interfaces
+ENV ROCKET_ADDRESS=0.0.0.0
+
 # Expose the application port (change as necessary)
-EXPOSE 8080
+EXPOSE 9797
 
 # Run the application
 CMD ["/app/backend"]
