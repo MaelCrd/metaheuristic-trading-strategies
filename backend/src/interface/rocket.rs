@@ -7,7 +7,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::env;
 
-use crate::interface::objects::{CreateCryptoObject, CryptoObject, Status};
+use crate::interface::objects::{CreateCryptoList, CryptoList, Status};
 
 #[get("/health")]
 async fn health_check() -> Json<Status> {
@@ -17,65 +17,55 @@ async fn health_check() -> Json<Status> {
     })
 }
 
-// Define a route to create a new crypto object
+// Define a route to create a new crypto list
 #[post(
-    "/crypto_objects",
+    "/crypto_lists",
     format = "application/json",
-    data = "<create_crypto_object>"
+    data = "<create_crypto_list>"
 )]
-async fn create_crypto_object(
+async fn create_crypto_list(
     pool: &State<PgPool>,
-    create_crypto_object: Json<CreateCryptoObject>,
-) -> Result<Json<Vec<CryptoObject>>, String> {
-    let rec = sqlx::query!(
+    create_crypto_list: Json<CreateCryptoList>,
+) -> Json<Vec<CryptoList>> {
+    let _ = sqlx::query!(
         r#"
-        INSERT INTO CryptoObject (name, type)
+        INSERT INTO crypto_list (name, type)
         VALUES ($1, $2)
         RETURNING id, name, type
         "#,
-        create_crypto_object.name,
-        create_crypto_object.r#type,
+        create_crypto_list.name,
+        create_crypto_list.r#type,
     )
     .fetch_one(&**pool)
-    .await;
+    .await
+    .unwrap();
 
-    match rec {
-        // Ok(row) => Ok(Json(CryptoObject {
-        //     id: row.id,
-        //     name: row.name,
-        //     r#type: row.r#type,
-        // })),
-        Ok(_) => Ok(get_crypto_objects(pool).await.unwrap()),
-        Err(e) => Err(e.to_string()),
-    }
+    get_crypto_lists(pool).await
 }
 
-// Define a route to get all crypto objects
-#[get("/crypto_objects")]
-async fn get_crypto_objects(pool: &State<PgPool>) -> Result<Json<Vec<CryptoObject>>, String> {
+// Define a route to get all crypto lists
+#[get("/crypto_lists")]
+async fn get_crypto_lists(pool: &State<PgPool>) -> Json<Vec<CryptoList>> {
     let recs = sqlx::query!(
         r#"
         SELECT id, name, type
-        FROM CryptoObject
+        FROM crypto_list
         "#,
     )
     .fetch_all(&**pool)
-    .await;
+    .await
+    .unwrap();
 
-    match recs {
-        Ok(rows) => {
-            let crypto_objects: Vec<CryptoObject> = rows
-                .into_iter()
-                .map(|row| CryptoObject {
-                    id: row.id,
-                    name: row.name,
-                    r#type: row.r#type,
-                })
-                .collect();
-            Ok(Json(crypto_objects))
-        }
-        Err(e) => Err(e.to_string()),
-    }
+    let crypto_lists: Vec<CryptoList> = recs
+        .into_iter()
+        .map(|row| CryptoList {
+            id: row.id,
+            name: row.name,
+            r#type: row.r#type,
+        })
+        .collect();
+
+    Json(crypto_lists)
 }
 
 // ------------------------------------------------
@@ -113,7 +103,7 @@ pub fn rocket() -> rocket::Rocket<Build> {
         }))
         .mount(
             "/api",
-            routes![health_check, create_crypto_object, get_crypto_objects],
+            routes![health_check, create_crypto_list, get_crypto_lists],
         )
         .attach(cors)
 }
