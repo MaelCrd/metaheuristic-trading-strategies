@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS crypto_symbol (
     symbol VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     market_cap FLOAT NOT NULL,
-    last_updated TIMESTAMP NOT NULL
+    last_updated TIMESTAMP NOT NULL,
+    available BOOLEAN DEFAULT TRUE,
+    UNIQUE (symbol)
 );
 
 -- Create crypto_list Table
