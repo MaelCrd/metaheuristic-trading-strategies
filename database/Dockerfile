@@ -16,7 +16,8 @@ COPY ./init.sql /docker-entrypoint-initdb.d/
 RUN mkdir -p /var/lib/postgresql/data
 
 # Set proper permissions
-RUN chown -R postgres:postgres /var/lib/postgresql/data
+# RUN chown -R postgres:postgres /var/lib/postgresql/data
+# RUN chmod +r /var/lib/postgresql/data
 
 # Set the data directory as a volume
 VOLUME /var/lib/postgresql/data
