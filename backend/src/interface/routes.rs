@@ -1,0 +1,23 @@
+use super::handlers::*;
+use rocket::{routes, Route};
+
+pub fn get_routes() -> Vec<Route> {
+    routes![
+        // General
+        general::hello,
+        general::health_check,
+        // Crypto Symbols
+        crypto_symbols::get_crypto_symbols,
+        crypto_symbols::reload_crypto_symbols,
+        // Crypto Lists
+        crypto_lists::get_crypto_lists,
+        crypto_lists::create_crypto_list,
+        crypto_lists::hide_crypto_list,
+        // MH Objects
+        mh_objects::get_mh_objects,
+        mh_objects::create_mh_object,
+        mh_objects::hide_mh_object,
+        // Tasks
+        tasks::get_tasks,
+    ]
+}
