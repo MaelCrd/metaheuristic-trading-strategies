@@ -1,7 +1,7 @@
 //! File with all the objects that are used in the database.
 
 // Import the necessary modules
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc}; // NaiveDateTime
 use serde::{Deserialize, Serialize};
 
 // --- Crypto Symbols --- //
@@ -11,8 +11,16 @@ pub struct CryptoSymbol {
     pub id: i32,
     pub symbol: String,
     pub name: String,
-    pub market_cap: f64,
-    pub last_updated: NaiveDateTime,
+    pub volume: f64,
+    pub last_updated: DateTime<Utc>,
+    pub available: bool,
+}
+
+// Simple version of the CryptoSymbol object
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CryptoSymbolSimple {
+    pub symbol: String,
+    pub volume: f64,
     pub available: bool,
 }
 

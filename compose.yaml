@@ -2,6 +2,7 @@ name: meta-t-s
 
 services:
   # frontend:
+  #   container_name: meta-t-s-frontend
   #   build:
   #     context: ./frontend
   #     dockerfile: Dockerfile
@@ -10,22 +11,26 @@ services:
   #   volumes:
   #     - ./frontend:/app
   #   command: yarn dev --host
-  # database:
-  #   build:
-  #     context: ./database
-  #     dockerfile: Dockerfile
-  #   # environment:
-  #   #   POSTGRES_USER: postgres
-  #   #   POSTGRES_PASSWORD: postgres
-  #   #   POSTGRES_DB: postgres
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ./database/data:/var/lib/postgresql/data
+  database:
+    container_name: meta-t-s-database
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/data:/var/lib/postgresql/data
   backend:
+    container_name: meta-t-s-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@database:5432/mydb
     ports:
-      - "8000:8000"
+      - "9797:9797"
     command: /app/backend
