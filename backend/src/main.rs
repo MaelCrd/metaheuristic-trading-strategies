@@ -7,9 +7,11 @@ use dotenv::dotenv;
 
 // mod listener; // Add this line to import the listener module
 
-use backend::interface::rocket;
+// use backend::interface::rocket;
 
-// use backend::binance::binance;
+use backend::binance;
+
+use backend::utils::loading;
 
 #[tokio::main]
 async fn main() {
@@ -25,11 +27,15 @@ async fn main() {
     // let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();
     // binance::get_symbols_actual_info(&mut symbol_volumes_vec).await;
 
+    // binance::klines::get_klines("ETHUSDT", "4d").await;
+
+    loading::test_print_loading();
+
     // return;
 
     // Wait 3 seconds before running the Rocket application
     // tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
 
     // Run the Rocket application
-    rocket::rocket().launch().await.unwrap();
+    // rocket::rocket().launch().await.unwrap();
 }

@@ -5,7 +5,7 @@ use rocket::{get, post};
 use sqlx::types::time::PrimitiveDateTime;
 use sqlx::PgPool;
 
-use crate::binance::binance;
+use crate::binance::symbols;
 use crate::objects::objects::{CryptoSymbol, CryptoSymbolSimple};
 use crate::utils;
 
@@ -39,7 +39,7 @@ pub async fn reload_crypto_symbols(pool: &State<PgPool>) -> Json<Vec<CryptoSymbo
     // Get the availability and volume of the crypto symbols
     println!("Getting actual info for all symbols");
     let mut new_symbols: Vec<CryptoSymbolSimple> = Vec::new();
-    binance::get_symbols_actual_info(&mut new_symbols).await;
+    symbols::get_symbols_actual_info(&mut new_symbols).await;
 
     // Get the current time
     let now_odt = OffsetDateTime::now_utc();
