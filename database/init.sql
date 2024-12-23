@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS crypto_symbol (
 -- Create crypto_list Table
 CREATE TABLE IF NOT EXISTS crypto_list (
     id SERIAL PRIMARY KEY,
+    hidden BOOLEAN DEFAULT FALSE NOT NULL,
     name VARCHAR(255) NOT NULL,
     type VARCHAR(255) NOT NULL
 );
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS crypto_list_x_crypto_symbol (
 -- Create mh_object Table without foreign key constraint
 CREATE TABLE IF NOT EXISTS mh_object (
     id SERIAL PRIMARY KEY,
+    hidden BOOLEAN DEFAULT FALSE NOT NULL,
     mh_parameters TEXT NOT NULL,
     other_parameters TEXT
 );
@@ -46,6 +48,7 @@ CREATE TABLE IF NOT EXISTS result (
 CREATE TABLE IF NOT EXISTS task (
     id SERIAL PRIMARY KEY,
     state VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     other_parameters TEXT,
     mh_object_id INTEGER,
     crypto_list_id INTEGER,
