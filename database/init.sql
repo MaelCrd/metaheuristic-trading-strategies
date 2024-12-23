@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS crypto_symbol (
     id SERIAL PRIMARY KEY,
     symbol VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    market_cap FLOAT NOT NULL,
+    volume FLOAT NOT NULL,
     last_updated TIMESTAMP NOT NULL,
     available BOOLEAN DEFAULT TRUE,
     UNIQUE (symbol)
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS task (
 );
 
 -- Insert data into crypto_symbol Table
-INSERT INTO crypto_symbol (symbol, name, market_cap, last_updated)
+INSERT INTO crypto_symbol (symbol, name, volume, last_updated)
 VALUES ('BTC', 'Bitcoin', 1.0, '2021-01-01 00:00:00'),
        ('ETH', 'Ethereum', 0.5, '2021-01-01 00:00:00'),
        ('XRP', 'Ripple', 0.3, '2021-01-01 00:00:00');
@@ -116,6 +116,10 @@ ON t.mh_object_id = mh.id
 LEFT JOIN result r
 ON t.result_id = r.id
 WHERE t.crypto_list_id = 1;
+
+-- Show all crypto symbols
+SELECT *
+FROM crypto_symbol;
 
 -- Show tables
 \dt
