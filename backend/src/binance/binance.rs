@@ -108,19 +108,6 @@ pub async fn get_symbols_actual_info(symbol_volumes_vec: &mut Vec<CryptoSymbolSi
     }
 }
 
-pub async fn update_symbols_info(new_symbols: &mut Vec<CryptoSymbolSimple>) {
-    // With all symbols from the database
-    // For each symbol :
-    // - update the volume
-    // - update the availability of the symbols
-
-    panic!("Not implemented yet");
-
-    // Get the symbols and their volumes
-    let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();
-    get_symbols_actual_info(&mut symbol_volumes_vec).await;
-}
-
 //
 
 //

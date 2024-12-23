@@ -6,7 +6,7 @@ use rocket::serde::json::Json;
 // use rocket::time::PrimitiveDateTime;
 use chrono::Utc;
 use rocket::time::OffsetDateTime;
-use rocket::{get, post, routes};
+use rocket::{get, post, put, routes};
 use rocket::{http::Method, Build, State};
 use rocket_cors::{AllowedHeaders, AllowedOrigins};
 use sqlx::postgres::PgPoolOptions;
@@ -18,7 +18,8 @@ use tokio::time::interval; // self,
 
 use crate::binance::binance;
 use crate::objects::objects::{
-    CreateCryptoList, CryptoList, CryptoSymbol, CryptoSymbolSimple, Status,
+    CreateCryptoList, CreateMHObject, CryptoListComplete, CryptoSymbol, CryptoSymbolSimple,
+    MHObject, Status,
 };
 
 #[get("/health")]
@@ -27,6 +28,88 @@ async fn health_check() -> Json<Status> {
         status: "healthy".to_string(),
         version: env!("CARGO_PKG_VERSION").to_string(),
     })
+}
+
+// Define a route to get all crypto lists
+#[get("/crypto_list?<id>")]
+async fn get_crypto_lists(
+    pool: &State<PgPool>,
+    id: Option<String>,
+) -> Result<Json<Vec<CryptoListComplete>>, rocket::http::Status> {
+    if let Some(id) = id {
+        let id = id.parse::<i32>().unwrap();
+        let recs = sqlx::query!(
+            r#"
+            SELECT id, hidden, name, type
+            FROM crypto_list
+            WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_all(&**pool)
+        .await
+        .unwrap();
+
+        // Check if the crypto list was found
+        if recs.is_empty() {
+            println!("Crypto list not found (id: {})", id);
+            return Err(rocket::http::Status::NotFound);
+        }
+
+        // Get all the crypto symbols linked to the crypto list
+        let crypto_symbols = sqlx::query!(
+            r#"
+            SELECT crypto_symbol_id
+            FROM crypto_list_x_crypto_symbol
+            WHERE crypto_list_id = $1
+            "#,
+            id
+        )
+        .fetch_all(&**pool)
+        .await
+        .unwrap();
+
+        // Convert the records to CryptoListComplete objects
+        let crypto_lists: Vec<CryptoListComplete> = recs
+            .into_iter()
+            .map(|row| CryptoListComplete {
+                id: row.id,
+                hidden: row.hidden,
+                name: row.name,
+                r#type: row.r#type,
+                crypto_symbols: crypto_symbols
+                    .iter()
+                    .map(|row| row.crypto_symbol_id)
+                    .collect(),
+            })
+            .collect();
+
+        // Return the crypto list
+        Ok(Json(crypto_lists))
+    } else {
+        let recs = sqlx::query!(
+            r#"
+            SELECT id, hidden, name, type
+            FROM crypto_list
+            "#,
+        )
+        .fetch_all(&**pool)
+        .await
+        .unwrap();
+
+        let crypto_lists: Vec<CryptoListComplete> = recs
+            .into_iter()
+            .map(|row| CryptoListComplete {
+                id: row.id,
+                hidden: row.hidden,
+                name: row.name,
+                r#type: row.r#type,
+                crypto_symbols: vec![],
+            })
+            .collect();
+
+        Ok(Json(crypto_lists))
+    }
 }
 
 // Define a route to create a new crypto list
@@ -38,12 +121,13 @@ async fn health_check() -> Json<Status> {
 async fn create_crypto_list(
     pool: &State<PgPool>,
     create_crypto_list: Json<CreateCryptoList>,
-) -> Json<Vec<CryptoList>> {
-    let _ = sqlx::query!(
+) -> Result<Json<Vec<CryptoListComplete>>, rocket::http::Status> {
+    // Insert the new crypto list and get its id
+    let res = sqlx::query!(
         r#"
         INSERT INTO crypto_list (name, type)
         VALUES ($1, $2)
-        RETURNING id, name, type
+        RETURNING id
         "#,
         create_crypto_list.name,
         create_crypto_list.r#type,
@@ -52,32 +136,93 @@ async fn create_crypto_list(
     .await
     .unwrap();
 
-    get_crypto_lists(pool).await
+    // Get the id of the new crypto list
+    let crypto_list_id = res.id;
+
+    // Link the crypto symbols to the new crypto list using the crypto_list_x_crypto_symbol table
+    for crypto_symbol_id in create_crypto_list.crypto_symbols.iter() {
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO crypto_list_x_crypto_symbol (crypto_list_id, crypto_symbol_id)
+            VALUES ($1, $2)
+            "#,
+            crypto_list_id,
+            crypto_symbol_id,
+        )
+        .execute(&**pool)
+        .await;
+
+        if let Err(e) = result {
+            println!(
+                "Failed to link crypto symbol to crypto list: {}\nReverting changes...",
+                e
+            );
+
+            // Delete the crypto symbols linked to the crypto list
+            let _ = sqlx::query!(
+                r#"
+                DELETE FROM crypto_list_x_crypto_symbol
+                WHERE crypto_list_id = $1
+                "#,
+                crypto_list_id,
+            )
+            .execute(&**pool)
+            .await
+            .unwrap();
+
+            // Delete the crypto list
+            let _ = sqlx::query!(
+                r#"
+                DELETE FROM crypto_list
+                WHERE id = $1
+                "#,
+                crypto_list_id,
+            )
+            .execute(&**pool)
+            .await
+            .unwrap();
+
+            // Return an internal server error
+            return Err(rocket::http::Status::InternalServerError);
+        }
+    }
+
+    // Return the crypto lists
+    Ok(get_crypto_lists(pool, None).await.unwrap())
 }
 
-// Define a route to get all crypto lists
-#[get("/crypto_list")]
-async fn get_crypto_lists(pool: &State<PgPool>) -> Json<Vec<CryptoList>> {
-    let recs = sqlx::query!(
+// Define a route to hide/show a crypto list
+#[put("/crypto_list?<id>&<hidden>")]
+async fn hide_crypto_list(
+    pool: &State<PgPool>,
+    id: String,
+    hidden: bool,
+) -> Result<Json<Vec<CryptoListComplete>>, rocket::http::Status> {
+    // Get the id of the crypto list to delete
+    let id = id.parse::<i32>().unwrap();
+
+    // Change the hidden status of the crypto list
+    let res = sqlx::query!(
         r#"
-        SELECT id, name, type
-        FROM crypto_list
+        UPDATE crypto_list
+        SET hidden = $1
+        WHERE id = $2
         "#,
+        hidden,
+        id,
     )
-    .fetch_all(&**pool)
+    .execute(&**pool)
     .await
     .unwrap();
 
-    let crypto_lists: Vec<CryptoList> = recs
-        .into_iter()
-        .map(|row| CryptoList {
-            id: row.id,
-            name: row.name,
-            r#type: row.r#type,
-        })
-        .collect();
+    // Check if the crypto list was deleted
+    if res.rows_affected() == 0 {
+        println!("Crypto list not found (id: {})", id);
+        return Err(rocket::http::Status::NotFound);
+    }
 
-    Json(crypto_lists)
+    // Return the crypto lists
+    Ok(get_crypto_lists(pool, None).await.unwrap())
 }
 
 /// Produce an infinite series of `"hello"`s, one per second.
@@ -240,8 +385,89 @@ async fn get_crypto_symbols(pool: &State<PgPool>) -> Json<Vec<CryptoSymbol>> {
     Json(crypto_symbols)
 }
 
+// Define a route to get all MHObjects
+#[get("/mh_object")]
+async fn get_mh_objects(pool: &State<PgPool>) -> Json<Vec<MHObject>> {
+    let recs = sqlx::query!(
+        r#"
+        SELECT id, hidden, mh_parameters, other_parameters
+        FROM mh_object
+        "#,
+    )
+    .fetch_all(&**pool)
+    .await
+    .unwrap();
+
+    let mh_objects: Vec<MHObject> = recs
+        .into_iter()
+        .map(|row| MHObject {
+            id: row.id,
+            hidden: row.hidden,
+            mh_parameters: row.mh_parameters,
+            other_parameters: row.other_parameters,
+        })
+        .collect();
+
+    Json(mh_objects)
+}
+
+// Define a route to create a MHObject
+#[post("/mh_object", format = "application/json", data = "<mh_object>")]
+async fn create_mh_object(
+    pool: &State<PgPool>,
+    mh_object: Json<CreateMHObject>,
+) -> Json<Vec<MHObject>> {
+    // Insert the new MHObject
+    sqlx::query!(
+        r#"
+        INSERT INTO mh_object (mh_parameters, other_parameters)
+        VALUES ($1, $2)
+        "#,
+        mh_object.mh_parameters,
+        mh_object.other_parameters,
+    )
+    .execute(&**pool)
+    .await
+    .unwrap();
+
+    // Return the MHObjects
+    get_mh_objects(pool).await
+}
+
+// // Define a route to hide/show a MHObject
+// #[put("/mh_object?<id>&<hidden>")]
+
+// // Define a route to get all tasks
+// #[get("/task")]
+// async fn get_tasks(pool: &State<PgPool>) -> Json<Vec<Task>> {
+//     let recs = sqlx::query!(
+//         r#"
+//         SELECT id, state, other_parameters
+//         FROM task
+//         "#,
+//     )
+//     .fetch_all(&**pool)
+//     .await
+//     .unwrap();
+
+//     let tasks: Vec<Task> = recs
+//         .into_iter()
+//         .map(|row| Task {
+//             id: row.id,
+//             state: row.state,
+//             other_parameters: row.other_parameters,
+//             mh_object_id: None,
+//             crypto_list_id: None,
+//             result_id: None,
+//         })
+//         .collect();
+
+//     Json(tasks)
+// }
+
 // ------------------------------------------------
 
+// Define the Rocket instance
 // #[launch]
 pub fn rocket() -> rocket::Rocket<Build> {
     // Configure CORS
@@ -281,9 +507,12 @@ pub fn rocket() -> rocket::Rocket<Build> {
                 health_check,
                 create_crypto_list,
                 get_crypto_lists,
+                hide_crypto_list,
                 hello,
                 reload_crypto_symbols,
                 get_crypto_symbols,
+                get_mh_objects,
+                create_mh_object
             ],
         )
         .attach(cors)

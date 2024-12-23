@@ -1,8 +1,8 @@
-use backend::objects::objects::CryptoSymbolSimple;
-use chrono::DateTime;
-use chrono::NaiveDateTime;
-use chrono::TimeZone;
-use chrono::Utc;
+// use backend::objects::objects::CryptoSymbolSimple;
+// use chrono::DateTime;
+// use chrono::NaiveDateTime;
+// use chrono::TimeZone;
+// use chrono::Utc;
 use dotenv::dotenv;
 
 mod listener; // Add this line to import the listener module
@@ -11,7 +11,7 @@ use backend::utils;
 
 use backend::interface::rocket;
 
-use backend::binance::binance;
+// use backend::binance::binance;
 
 #[tokio::main]
 async fn main() {

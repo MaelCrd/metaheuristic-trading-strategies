@@ -29,14 +29,25 @@ pub struct CryptoSymbolSimple {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CryptoList {
     pub id: i32,
+    pub hidden: bool,
     pub name: String,
     pub r#type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CryptoListComplete {
+    pub id: i32,
+    pub hidden: bool,
+    pub name: String,
+    pub r#type: String,
+    pub crypto_symbols: Vec<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateCryptoList {
     pub name: String,
     pub r#type: String,
+    pub crypto_symbols: Vec<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,6 +61,7 @@ pub struct CryptoListXCryptoSymbol {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MHObject {
     pub id: i32,
+    pub hidden: bool,
     pub mh_parameters: String,
     pub other_parameters: Option<String>,
 }
@@ -75,6 +87,7 @@ pub struct Result {
 pub struct Task {
     pub id: i32,
     pub state: String,
+    pub created_at: DateTime<Utc>,
     pub other_parameters: Option<String>,
     pub mh_object_id: Option<i32>,
     pub crypto_list_id: Option<i32>,
