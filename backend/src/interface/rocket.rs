@@ -8,7 +8,6 @@ use std::env;
 use super::routes;
 
 // Define the Rocket instance
-// #[launch]
 pub fn rocket() -> rocket::Rocket<Build> {
     // Configure CORS
     let cors = rocket_cors::CorsOptions {
@@ -32,7 +31,7 @@ pub fn rocket() -> rocket::Rocket<Build> {
         // .attach(Db::fairing())
         .configure(rocket::Config::figment().merge(("port", 9797)))
         .attach(AdHoc::on_ignite("Database", |rocket| async {
-            let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+            let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
             let pool = PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&database_url)

@@ -5,9 +5,7 @@
 // use chrono::Utc;
 use dotenv::dotenv;
 
-mod listener; // Add this line to import the listener module
-use backend::module;
-use backend::utils;
+// mod listener; // Add this line to import the listener module
 
 use backend::interface::rocket;
 
@@ -22,12 +20,6 @@ async fn main() {
     // tokio::spawn(async move {
     //     listener::listen_for_updates(rx).await;
     // });
-
-    // Run the function "helper_function" from the "utils" module
-    utils::helpers::helper_function();
-
-    // Run the function "function1" from the "submodule" module
-    module::submodule::function1();
 
     // Call the function "print_all_symbols"
     // let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();

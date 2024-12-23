@@ -41,14 +41,6 @@ pub async fn reload_crypto_symbols(pool: &State<PgPool>) -> Json<Vec<CryptoSymbo
     let mut new_symbols: Vec<CryptoSymbolSimple> = Vec::new();
     binance::get_symbols_actual_info(&mut new_symbols).await;
 
-    // Print the 5 first new symbols
-    for symbol in new_symbols.iter().take(5) {
-        println!(
-            "Symbol: {}, Volume: {}, Available: {}",
-            symbol.symbol, symbol.volume, symbol.available
-        );
-    }
-
     // Get the current time
     let now_odt = OffsetDateTime::now_utc();
     let current_time: PrimitiveDateTime = PrimitiveDateTime::new(now_odt.date(), now_odt.time());
@@ -71,7 +63,6 @@ pub async fn reload_crypto_symbols(pool: &State<PgPool>) -> Json<Vec<CryptoSymbo
             });
 
         // Update the symbol
-        println!("Updating symbol: {:?}", new_symbol);
         sqlx::query!(
             r#"
             UPDATE crypto_symbol

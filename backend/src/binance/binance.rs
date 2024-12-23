@@ -42,11 +42,6 @@ pub async fn get_symbols_actual_info(symbol_volumes_vec: &mut Vec<CryptoSymbolSi
         symbols_availability.push((symbol, status == "TRADING"));
     }
 
-    // // Print all symbols and their availability
-    // for (symbol, available) in symbols_availability.iter() {
-    //     print!("{symbol} : {available}, ");
-    // }
-
     //
 
     //
