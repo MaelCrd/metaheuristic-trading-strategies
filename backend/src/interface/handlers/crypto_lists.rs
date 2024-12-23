@@ -15,7 +15,7 @@ pub async fn get_crypto_lists(
         let id = id.parse::<i32>().unwrap();
         let recs = sqlx::query!(
             r#"
-            SELECT id, hidden, name, type
+            SELECT id, hidden, name, interval, type
             FROM crypto_list
             WHERE id = $1
             "#,
@@ -51,6 +51,7 @@ pub async fn get_crypto_lists(
                 id: row.id,
                 hidden: row.hidden,
                 name: row.name,
+                interval: row.interval,
                 r#type: row.r#type,
                 crypto_symbols: crypto_symbols
                     .iter()
@@ -64,7 +65,7 @@ pub async fn get_crypto_lists(
     } else {
         let recs = sqlx::query!(
             r#"
-            SELECT id, hidden, name, type
+            SELECT id, hidden, name, interval, type
             FROM crypto_list
             "#,
         )
@@ -78,6 +79,7 @@ pub async fn get_crypto_lists(
                 id: row.id,
                 hidden: row.hidden,
                 name: row.name,
+                interval: row.interval,
                 r#type: row.r#type,
                 crypto_symbols: vec![],
             })
@@ -100,11 +102,12 @@ pub async fn create_crypto_list(
     // Insert the new crypto list and get its id
     let res = sqlx::query!(
         r#"
-        INSERT INTO crypto_list (name, type)
-        VALUES ($1, $2)
+        INSERT INTO crypto_list (name, interval, type)
+        VALUES ($1, $2, $3)
         RETURNING id
         "#,
         create_crypto_list.name,
+        create_crypto_list.interval,
         create_crypto_list.r#type,
     )
     .fetch_one(&**pool)

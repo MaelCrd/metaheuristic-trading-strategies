@@ -7,7 +7,7 @@ use dotenv::dotenv;
 
 // mod listener; // Add this line to import the listener module
 
-// use backend::interface::rocket;
+use backend::interface::rocket;
 
 use backend::binance;
 
@@ -37,5 +37,5 @@ async fn main() {
     // tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
 
     // Run the Rocket application
-    // rocket::rocket().launch().await.unwrap();
+    rocket::rocket().launch().await.unwrap();
 }

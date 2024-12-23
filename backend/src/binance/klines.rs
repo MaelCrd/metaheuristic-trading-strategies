@@ -310,7 +310,6 @@ async fn check_klines_integrity(pool: &PgPool, table_name: &str) {
     // Check if each difference between the open time of two consecutive klines is equal to the interval
     // Get interval between two consecutive klines (first kline open time - second kline open time)
     // We will then count the number of differences that are not equal to this interval
-
     // Get the interval
     let intervals: Vec<Option<i64>> = sqlx::query_scalar(&format!(
         r#"

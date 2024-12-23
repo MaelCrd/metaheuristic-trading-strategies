@@ -1,9 +1,9 @@
-use rocket::get;
 use rocket::serde::json::Json;
-use rocket::State;
+use rocket::{get, post};
+use rocket::{put, State};
 use sqlx::PgPool;
 
-use crate::objects::objects::Task;
+use crate::objects::objects::{CreateTask, Task, TaskState};
 use crate::utils;
 
 // Define a route to get all tasks
@@ -16,7 +16,7 @@ pub async fn get_tasks(
         let id = id.parse::<i32>().unwrap();
         let recs = sqlx::query!(
             r#"
-            SELECT id, state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
+            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
             FROM task
             WHERE id = $1
             "#,
@@ -36,7 +36,7 @@ pub async fn get_tasks(
             .into_iter()
             .map(|row| Task {
                 id: row.id,
-                state: row.state,
+                state: TaskState::parse_from(row.state.as_deref().unwrap()),
                 created_at: utils::datetime::convert_primitive_to_chrono(row.created_at),
                 other_parameters: row.other_parameters,
                 mh_object_id: row.mh_object_id,
@@ -50,7 +50,7 @@ pub async fn get_tasks(
     } else {
         let recs = sqlx::query!(
             r#"
-            SELECT id, state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
+            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
             FROM task
             "#,
         )
@@ -62,7 +62,7 @@ pub async fn get_tasks(
             .into_iter()
             .map(|row| Task {
                 id: row.id,
-                state: row.state,
+                state: TaskState::parse_from(row.state.as_deref().unwrap()),
                 created_at: utils::datetime::convert_primitive_to_chrono(row.created_at),
                 other_parameters: row.other_parameters,
                 mh_object_id: row.mh_object_id,
@@ -74,4 +74,83 @@ pub async fn get_tasks(
         // Return the tasks
         Ok(Json(tasks))
     }
+}
+
+// Define a route to create a task
+#[post("/task", data = "<task>")]
+pub async fn create_task(
+    pool: &State<PgPool>,
+    task: Json<CreateTask>,
+) -> Result<Json<Vec<Task>>, rocket::http::Status> {
+    sqlx::query!(
+        r#"
+        INSERT INTO task (other_parameters, mh_object_id, crypto_list_id)
+        VALUES ($1, $2, $3)
+        "#,
+        task.other_parameters,
+        task.mh_object_id,
+        task.crypto_list_id
+    )
+    .fetch_all(&**pool)
+    .await
+    .unwrap();
+
+    // Return the task
+    Ok(get_tasks(pool, None).await.unwrap())
+}
+
+// Define a route to queue a task
+#[put("/task/queue?<id>")]
+pub async fn queue_task(
+    pool: &State<PgPool>,
+    id: i32,
+) -> Result<Json<Vec<Task>>, rocket::http::Status> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE task
+        SET state = 'PENDING'
+        WHERE id = $1 AND state = 'CREATED'
+        "#,
+        id
+    )
+    .execute(&**pool)
+    .await
+    .unwrap();
+
+    // Check if the task was found
+    if result.rows_affected() == 0 {
+        println!("Task not found or already queued (id: {})", id);
+        return Err(rocket::http::Status::NotFound);
+    }
+
+    // Return the task
+    Ok(get_tasks(pool, None).await.unwrap())
+}
+
+// Define a route to cancel a task
+#[put("/task/cancel?<id>")]
+pub async fn cancel_task(
+    pool: &State<PgPool>,
+    id: i32,
+) -> Result<Json<Vec<Task>>, rocket::http::Status> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE task
+        SET state = 'CANCELLING'
+        WHERE id = $1 AND (state = 'CREATED' OR state = 'PENDING' OR state = 'RUNNING')
+        "#,
+        id
+    )
+    .execute(&**pool)
+    .await
+    .unwrap();
+
+    // Check if the task was found
+    if result.rows_affected() == 0 {
+        println!("Task not found or already cancelled (id: {})", id);
+        return Err(rocket::http::Status::NotFound);
+    }
+
+    // Return the task
+    Ok(get_tasks(pool, None).await.unwrap())
 }

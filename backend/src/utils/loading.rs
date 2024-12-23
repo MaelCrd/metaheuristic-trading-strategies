@@ -48,7 +48,7 @@ pub fn test_print_loading() {
     let start_time = Instant::now();
     for i in 0..100 {
         print_loading_progress(i, 100, start_time);
-        sleep(Duration::from_millis(30));
+        sleep(Duration::from_millis(3));
     }
     println!();
 }

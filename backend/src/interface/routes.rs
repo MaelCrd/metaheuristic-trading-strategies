@@ -19,5 +19,8 @@ pub fn get_routes() -> Vec<Route> {
         mh_objects::hide_mh_object,
         // Tasks
         tasks::get_tasks,
+        tasks::create_task,
+        tasks::queue_task,
+        tasks::cancel_task,
     ]
 }
