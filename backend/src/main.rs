@@ -1,6 +1,4 @@
-use std::env;
-
-use backend::objects::objects::{CryptoInterval, Kline};
+use backend::objects::objects::{CryptoInterval, Kline, KlineCollection};
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
 // use chrono::NaiveDateTime;
@@ -12,10 +10,9 @@ use dotenv::dotenv;
 
 use backend::interface::rocket;
 
-use backend::{binance, utils};
+use backend::binance;
 
 use backend::utils::loading;
-use sqlx::PgPool;
 
 #[tokio::main]
 async fn main() {
@@ -31,12 +28,13 @@ async fn main() {
     // let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();
     // binance::get_symbols_actual_info(&mut symbol_volumes_vec).await;
 
-    let mut klines: Vec<Kline> = Vec::new();
+    let mut klines_collection: KlineCollection = KlineCollection::new();
     let result = binance::klines::retrieve::retrieve_klines(
-        &mut klines,
+        &mut klines_collection,
         "ETHUSDT",
         &CryptoInterval::Int12h,
-        utils::time::days_to_minutes(20),
+        chrono::Duration::days(17).num_minutes(),
+        0.8,
     )
     .await;
 
@@ -45,8 +43,24 @@ async fn main() {
         return;
     }
 
-    println!("Klines length: {}", klines.len());
-    for kline in klines {
+    println!(
+        "Klines length (train): {}",
+        klines_collection.training.len()
+    );
+    println!(
+        "Klines length (validation): {}",
+        klines_collection.validation.len()
+    );
+    println!(
+        "Klines length (total): {}",
+        klines_collection.training.len() + klines_collection.validation.len()
+    );
+    println!("Klines training:");
+    for kline in klines_collection.training.iter() {
+        println!("{:?}", kline.open_time);
+    }
+    println!("Klines validation:");
+    for kline in klines_collection.validation.iter() {
         println!("{:?}", kline.open_time);
     }
 

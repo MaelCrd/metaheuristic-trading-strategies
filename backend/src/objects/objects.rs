@@ -252,6 +252,21 @@ pub struct Kline {
     pub taker_buy_quote_asset_volume: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KlineCollection {
+    pub training: Vec<Kline>,
+    pub validation: Vec<Kline>,
+}
+
+impl KlineCollection {
+    pub fn new() -> KlineCollection {
+        KlineCollection {
+            training: Vec::new(),
+            validation: Vec::new(),
+        }
+    }
+}
+
 // --- Other Objects --- //
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -6,13 +6,15 @@ use super::acquire;
 use super::utils;
 use crate::objects::objects::CryptoInterval;
 use crate::objects::objects::Kline;
+use crate::objects::objects::KlineCollection;
 
 // Function to retrieve klines from database
 pub async fn retrieve_klines(
-    klines: &mut Vec<Kline>,
+    klines_collection: &mut KlineCollection,
     symbol: &str,
     interval: &CryptoInterval,
     limit_minutes: i64,
+    training_percentage: f64,
 ) -> Result<(), sqlx::Error> {
     // Retrieve the klines from the database
     let table_name = utils::get_table_name(symbol, interval);
@@ -56,9 +58,16 @@ pub async fn retrieve_klines(
         table_name, limit
     )).fetch_all(&pool).await.unwrap();
 
-    // Parse the results
+    // Parse the results and add them to the klines collection
+    let training_length = (result.len() as f64 * training_percentage).round() as usize;
+    let mut i = 0;
     for row in result {
-        klines.push(Kline {
+        if i < training_length {
+            &mut klines_collection.training
+        } else {
+            &mut klines_collection.validation
+        }
+        .push(Kline {
             open_time: DateTime::<Utc>::from_timestamp_millis(row.get::<i64, _>("open_time"))
                 .unwrap(),
             open: row.get("open"),
@@ -73,6 +82,7 @@ pub async fn retrieve_klines(
             taker_buy_base_asset_volume: row.get("taker_buy_base_asset_volume"),
             taker_buy_quote_asset_volume: row.get("taker_buy_quote_asset_volume"),
         });
+        i += 1;
     }
 
     Ok(())

@@ -2,7 +2,7 @@ use std::env;
 
 use sqlx::PgPool;
 
-use crate::objects::objects::CryptoInterval;
+use crate::objects::objects::{CryptoInterval, Kline, KlineCollection};
 
 pub fn get_table_name(symbol: &str, interval: &CryptoInterval) -> String {
     format!("klines_{}_{}", symbol, interval.to_string()).to_lowercase()
