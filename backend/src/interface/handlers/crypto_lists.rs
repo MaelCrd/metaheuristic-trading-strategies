@@ -3,7 +3,7 @@ use rocket::State;
 use rocket::{get, post, put};
 use sqlx::PgPool;
 
-use crate::objects::objects::{CreateCryptoList, CryptoListComplete};
+use crate::objects::objects::{CreateCryptoList, CryptoInterval, CryptoListComplete};
 
 // Define a route to get all crypto lists
 #[get("/crypto_list?<id>")]
@@ -15,7 +15,7 @@ pub async fn get_crypto_lists(
         let id = id.parse::<i32>().unwrap();
         let recs = sqlx::query!(
             r#"
-            SELECT id, hidden, name, interval, type
+            SELECT id, hidden, name, interval::TEXT as interval, type
             FROM crypto_list
             WHERE id = $1
             "#,
@@ -51,7 +51,7 @@ pub async fn get_crypto_lists(
                 id: row.id,
                 hidden: row.hidden,
                 name: row.name,
-                interval: row.interval,
+                interval: CryptoInterval::parse_from(row.interval.as_deref().unwrap()),
                 r#type: row.r#type,
                 crypto_symbols: crypto_symbols
                     .iter()
@@ -65,7 +65,7 @@ pub async fn get_crypto_lists(
     } else {
         let recs = sqlx::query!(
             r#"
-            SELECT id, hidden, name, interval, type
+            SELECT id, hidden, name, interval::TEXT as interval, type
             FROM crypto_list
             "#,
         )
@@ -79,7 +79,7 @@ pub async fn get_crypto_lists(
                 id: row.id,
                 hidden: row.hidden,
                 name: row.name,
-                interval: row.interval,
+                interval: CryptoInterval::parse_from(row.interval.as_deref().unwrap()),
                 r#type: row.r#type,
                 crypto_symbols: vec![],
             })
@@ -107,7 +107,7 @@ pub async fn create_crypto_list(
         RETURNING id
         "#,
         create_crypto_list.name,
-        create_crypto_list.interval,
+        create_crypto_list.interval.clone() as CryptoInterval,
         create_crypto_list.r#type,
     )
     .fetch_one(&**pool)

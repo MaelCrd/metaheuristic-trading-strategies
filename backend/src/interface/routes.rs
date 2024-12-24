@@ -6,6 +6,7 @@ pub fn get_routes() -> Vec<Route> {
         // General
         general::hello,
         general::health_check,
+        general::purge_hidden_orphans,
         // Crypto Symbols
         crypto_symbols::get_crypto_symbols,
         crypto_symbols::reload_crypto_symbols,

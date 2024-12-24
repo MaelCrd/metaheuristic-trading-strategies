@@ -1,3 +1,6 @@
+use std::env;
+
+use backend::objects::objects::{CryptoInterval, Kline};
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
 // use chrono::NaiveDateTime;
@@ -9,9 +12,10 @@ use dotenv::dotenv;
 
 use backend::interface::rocket;
 
-use backend::binance;
+use backend::{binance, utils};
 
 use backend::utils::loading;
+use sqlx::PgPool;
 
 #[tokio::main]
 async fn main() {
@@ -27,11 +31,34 @@ async fn main() {
     // let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();
     // binance::get_symbols_actual_info(&mut symbol_volumes_vec).await;
 
-    // binance::klines::get_klines("ETHUSDT", "4d").await;
+    binance::klines::acquire::get_klines("ETHUSDT", CryptoInterval::Int12h).await;
+
+    let pool = PgPool::connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
+        .await
+        .expect("Failed to create pool.");
+
+    let mut klines: Vec<Kline> = Vec::new();
+    let result = binance::klines::retrieve::retrieve_klines(
+        &pool,
+        &mut klines,
+        "ETHUSDT",
+        &CryptoInterval::Int12h,
+        utils::time::days_to_minutes(15),
+    )
+    .await;
+
+    if result.is_err() {
+        println!("Error: {:?}", result.err().unwrap());
+        return;
+    }
+
+    for kline in klines {
+        println!("{:?}", kline);
+    }
+
+    return;
 
     loading::test_print_loading();
-
-    // return;
 
     // Wait 3 seconds before running the Rocket application
     // tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;

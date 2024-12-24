@@ -28,7 +28,7 @@ pub fn print_loading_progress(progress: i32, total: i32, start_time: Instant) {
         "--:--".to_string()
     };
     print!(
-        "\r{}Loading... {}  ETA: {}",
+        "\r{}Loading... {}  ETA: {}{}",
         TEXT_COLOR,
         (0..40)
             .map(|j| if j > i + 1 {
@@ -39,7 +39,8 @@ pub fn print_loading_progress(progress: i32, total: i32, start_time: Instant) {
                 &**STR_DONE
             })
             .collect::<String>(),
-        eta
+        eta,
+        RESET_COLOR
     );
     io::stdout().flush().unwrap();
 }

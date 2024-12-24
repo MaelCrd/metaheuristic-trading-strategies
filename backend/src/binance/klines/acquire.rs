@@ -4,12 +4,17 @@ use sqlx::PgPool;
 use std::{env, time::Duration};
 use tokio::time::sleep;
 
+use crate::objects::objects::CryptoInterval;
+
+use super::utils;
+
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
 const KLINES_LIMIT: &str = "1500";
+const REQUESTS_DELAY_SEC: u64 = 1;
 
-pub async fn get_klines(symbol: &str, interval: &str) {
+pub async fn get_klines(symbol: &str, interval: CryptoInterval) {
     let pool = connect_to_db().await;
-    let table_name = format!("klines_{}_{}", symbol, interval).to_lowercase();
+    let table_name = utils::get_table_name(symbol, &interval);
     println!("Table name: {}", table_name);
 
     let table_exists = check_table_exists(&pool, &table_name).await;
@@ -28,11 +33,11 @@ pub async fn get_klines(symbol: &str, interval: &str) {
         if !table_exists {
             create_table(&pool, &table_name).await;
         }
-        fetch_historical_data(&pool, &client, &table_name, symbol, interval).await;
+        fetch_historical_data(&pool, &client, &table_name, symbol, &interval).await;
     } else {
         println!("Table exists, fetching recent and older data...");
-        fetch_recent_data(&pool, &client, &table_name, symbol, interval).await;
-        fetch_older_data(&pool, &client, &table_name, symbol, interval).await;
+        fetch_recent_data(&pool, &client, &table_name, symbol, &interval).await;
+        fetch_older_data(&pool, &client, &table_name, symbol, &interval).await;
     }
 
     // Check the integrity of the klines
@@ -81,16 +86,16 @@ async fn create_table(pool: &PgPool, table_name: &str) {
         r#"
         CREATE TABLE {} (
             open_time BIGINT PRIMARY KEY,
-            open TEXT NOT NULL,
-            high TEXT NOT NULL,
-            low TEXT NOT NULL,
-            close TEXT NOT NULL,
-            volume TEXT NOT NULL,
+            open FLOAT NOT NULL,
+            high FLOAT NOT NULL,
+            low FLOAT NOT NULL,
+            close FLOAT NOT NULL,
+            volume FLOAT NOT NULL,
             close_time BIGINT NOT NULL,
-            quote_asset_volume TEXT NOT NULL,
+            quote_asset_volume FLOAT NOT NULL,
             number_of_trades BIGINT NOT NULL,
-            taker_buy_base_asset_volume TEXT NOT NULL,
-            taker_buy_quote_asset_volume TEXT NOT NULL
+            taker_buy_base_asset_volume FLOAT NOT NULL,
+            taker_buy_quote_asset_volume FLOAT NOT NULL
         )
         "#,
         table_name
@@ -105,7 +110,7 @@ async fn fetch_historical_data(
     client: &Client,
     table_name: &str,
     symbol: &str,
-    interval: &str,
+    interval: &CryptoInterval,
 ) {
     println!("Fetching historical data...");
     // Set end time to timestamp of 1 year after the current time
@@ -114,7 +119,7 @@ async fn fetch_historical_data(
         let params = {
             [
                 ("symbol", symbol),
-                ("interval", interval),
+                ("interval", &interval.to_binance_string()),
                 ("limit", KLINES_LIMIT),
                 ("endTime", &end_time.to_string()),
             ]
@@ -140,7 +145,7 @@ async fn fetch_older_data(
     client: &Client,
     table_name: &str,
     symbol: &str,
-    interval: &str,
+    interval: &CryptoInterval,
 ) {
     println!("Fetching older data...");
     let result: i64 = sqlx::query_scalar(&format!(
@@ -158,7 +163,7 @@ async fn fetch_older_data(
     loop {
         let params = [
             ("symbol", symbol),
-            ("interval", interval),
+            ("interval", &interval.to_binance_string()),
             ("limit", KLINES_LIMIT),
             ("endTime", &end_time.to_string()),
         ];
@@ -183,7 +188,7 @@ async fn fetch_recent_data(
     client: &Client,
     table_name: &str,
     symbol: &str,
-    interval: &str,
+    interval: &CryptoInterval,
 ) {
     println!("Fetching recent data...");
     let result: i64 = sqlx::query_scalar(&format!(
@@ -201,7 +206,7 @@ async fn fetch_recent_data(
     loop {
         let params = [
             ("symbol", symbol),
-            ("interval", interval),
+            ("interval", &interval.to_binance_string()),
             ("limit", KLINES_LIMIT),
             ("startTime", &start_time.to_string()),
         ];
@@ -240,27 +245,55 @@ async fn fetch_klines(client: &Client, params: &[(&str, &str)]) -> Vec<serde_jso
         .expect("Failed to convert response to string");
 
     let data: serde_json::Value = serde_json::from_str(&response).expect("Failed to parse klines");
-    // sleep(Duration::from_secs(3)).await; // Add a 1-second delay between requests
+    sleep(Duration::from_secs(REQUESTS_DELAY_SEC)).await; // Add a delay between requests
     data.as_array().expect("Failed to get klines").clone()
 }
 
 async fn insert_kline(pool: &PgPool, table_name: &str, kline: &serde_json::Value) {
     let kline = kline.as_array().expect("Failed to get kline");
     let open_time = kline[0].as_u64().expect("Failed to get open time");
-    let open = kline[1].as_str().expect("Failed to get open");
-    let high = kline[2].as_str().expect("Failed to get high");
-    let low = kline[3].as_str().expect("Failed to get low");
-    let close = kline[4].as_str().expect("Failed to get close");
-    let volume = kline[5].as_str().expect("Failed to get volume");
+    let open = kline[1]
+        .as_str()
+        .expect("Failed to get open")
+        .parse::<f64>()
+        .unwrap();
+    let high = kline[2]
+        .as_str()
+        .expect("Failed to get high")
+        .parse::<f64>()
+        .unwrap();
+    let low = kline[3]
+        .as_str()
+        .expect("Failed to get low")
+        .parse::<f64>()
+        .unwrap();
+    let close = kline[4]
+        .as_str()
+        .expect("Failed to get close")
+        .parse::<f64>()
+        .unwrap();
+    let volume = kline[5]
+        .as_str()
+        .expect("Failed to get volume")
+        .parse::<f64>()
+        .unwrap();
     let close_time = kline[6].as_u64().expect("Failed to get close time");
-    let quote_asset_volume = kline[7].as_str().expect("Failed to get quote asset volume");
+    let quote_asset_volume = kline[7]
+        .as_str()
+        .expect("Failed to get quote asset volume")
+        .parse::<f64>()
+        .unwrap();
     let number_of_trades = kline[8].as_u64().expect("Failed to get number of trades");
     let taker_buy_base_asset_volume = kline[9]
         .as_str()
-        .expect("Failed to get taker buy base asset volume");
+        .expect("Failed to get taker buy base asset volume")
+        .parse::<f64>()
+        .unwrap();
     let taker_buy_quote_asset_volume = kline[10]
         .as_str()
-        .expect("Failed to get taker buy quote asset volume");
+        .expect("Failed to get taker buy quote asset volume")
+        .parse::<f64>()
+        .unwrap();
 
     let result = sqlx::query(&format!(
         r#"
