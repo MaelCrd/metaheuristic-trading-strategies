@@ -31,19 +31,12 @@ async fn main() {
     // let mut symbol_volumes_vec: Vec<CryptoSymbolSimple> = Vec::new();
     // binance::get_symbols_actual_info(&mut symbol_volumes_vec).await;
 
-    binance::klines::acquire::get_klines("ETHUSDT", CryptoInterval::Int12h).await;
-
-    let pool = PgPool::connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
-        .await
-        .expect("Failed to create pool.");
-
     let mut klines: Vec<Kline> = Vec::new();
     let result = binance::klines::retrieve::retrieve_klines(
-        &pool,
         &mut klines,
         "ETHUSDT",
         &CryptoInterval::Int12h,
-        utils::time::days_to_minutes(15),
+        utils::time::days_to_minutes(20),
     )
     .await;
 
@@ -52,8 +45,9 @@ async fn main() {
         return;
     }
 
+    println!("Klines length: {}", klines.len());
     for kline in klines {
-        println!("{:?}", kline);
+        println!("{:?}", kline.open_time);
     }
 
     return;

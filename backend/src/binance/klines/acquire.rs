@@ -1,227 +1,156 @@
 use chrono::TimeZone;
 use reqwest::Client;
 use sqlx::PgPool;
-use std::{env, time::Duration};
+use std::time::Duration;
 use tokio::time::sleep;
 
+use super::utils;
 use crate::objects::objects::CryptoInterval;
 
-use super::utils;
-
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
-const KLINES_LIMIT: &str = "1500";
+const KLINES_LIMIT: &str = "5";
 const REQUESTS_DELAY_SEC: u64 = 1;
 
-pub async fn get_klines(symbol: &str, interval: CryptoInterval) {
-    let pool = connect_to_db().await;
+#[derive(PartialEq)]
+enum KlinesFetchType {
+    Recent,
+    Older,
+}
+
+pub async fn acquire_klines(
+    pool: &PgPool,
+    symbol: &str,
+    interval: &CryptoInterval,
+    limit: &Option<i64>,
+    table_exists: bool,
+    table_length: &mut i64,
+) -> Result<(), sqlx::Error> {
     let table_name = utils::get_table_name(symbol, &interval);
     println!("Table name: {}", table_name);
 
-    let table_exists = check_table_exists(&pool, &table_name).await;
-    let mut table_empty = true;
+    // let table_exists = utils::check_table_exists(&pool, &table_name).await;
+    // let mut table_length = utils::get_table_length(&pool, &table_name).await;
 
-    if table_exists {
-        table_empty = check_table_empy(&pool, &table_name).await;
-    }
-
-    println!("Table empty: {}", table_empty);
+    println!("Table length: {}", table_length);
 
     let client = Client::new();
 
-    if !table_exists || table_empty {
+    if !table_exists || *table_length == 0 {
         println!("Table doesn't exist, creating table and fetching historical data...");
         if !table_exists {
-            create_table(&pool, &table_name).await;
+            let result = utils::create_klines_table(&pool, &table_name).await;
+            if result.is_err() {
+                return Err(result.err().unwrap());
+            }
         }
-        fetch_historical_data(&pool, &client, &table_name, symbol, &interval).await;
+        loop_fetch_klines(
+            &pool,
+            &client,
+            &table_name,
+            symbol,
+            interval,
+            table_length,
+            limit,
+            &KlinesFetchType::Older,
+        )
+        .await;
     } else {
         println!("Table exists, fetching recent and older data...");
-        fetch_recent_data(&pool, &client, &table_name, symbol, &interval).await;
-        fetch_older_data(&pool, &client, &table_name, symbol, &interval).await;
+        loop_fetch_klines(
+            &pool,
+            &client,
+            &table_name,
+            symbol,
+            interval,
+            table_length,
+            limit,
+            &KlinesFetchType::Recent,
+        )
+        .await;
+        loop_fetch_klines(
+            &pool,
+            &client,
+            &table_name,
+            symbol,
+            interval,
+            table_length,
+            limit,
+            &KlinesFetchType::Older,
+        )
+        .await;
     }
 
     // Check the integrity of the klines
     check_klines_integrity(&pool, &table_name).await;
+
+    Ok(())
 }
 
-async fn connect_to_db() -> PgPool {
-    PgPool::connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
-        .await
-        .expect("Failed to create pool.")
-}
-
-async fn check_table_exists(pool: &PgPool, table_name: &str) -> bool {
-    sqlx::query_scalar(&format!(
-        r#"
-        SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_name = '{}'
-        )
-        "#,
-        table_name
-    ))
-    .fetch_one(pool)
-    .await
-    .expect("Failed to check if table exists")
-}
-
-async fn check_table_empy(pool: &PgPool, table_name: &str) -> bool {
-    let result: bool = sqlx::query_scalar(&format!(
-        r#"
-        SELECT EXISTS (
-            SELECT FROM {}
-        )
-        "#,
-        table_name
-    ))
-    .fetch_one(pool)
-    .await
-    .expect("Failed to check if table is empty");
-
-    !result
-}
-
-async fn create_table(pool: &PgPool, table_name: &str) {
-    sqlx::query(&format!(
-        r#"
-        CREATE TABLE {} (
-            open_time BIGINT PRIMARY KEY,
-            open FLOAT NOT NULL,
-            high FLOAT NOT NULL,
-            low FLOAT NOT NULL,
-            close FLOAT NOT NULL,
-            volume FLOAT NOT NULL,
-            close_time BIGINT NOT NULL,
-            quote_asset_volume FLOAT NOT NULL,
-            number_of_trades BIGINT NOT NULL,
-            taker_buy_base_asset_volume FLOAT NOT NULL,
-            taker_buy_quote_asset_volume FLOAT NOT NULL
-        )
-        "#,
-        table_name
-    ))
-    .execute(pool)
-    .await
-    .expect("Failed to create table");
-}
-
-async fn fetch_historical_data(
+async fn loop_fetch_klines(
     pool: &PgPool,
     client: &Client,
     table_name: &str,
     symbol: &str,
     interval: &CryptoInterval,
+    table_length: &mut i64,
+    limit: &Option<i64>,
+    fetch_type: &KlinesFetchType,
 ) {
-    println!("Fetching historical data...");
-    // Set end time to timestamp of 1 year after the current time
-    let mut end_time: u64 = chrono::Utc::now().timestamp_millis() as u64 + 31536000000;
-    loop {
-        let params = {
-            [
-                ("symbol", symbol),
-                ("interval", &interval.to_binance_string()),
-                ("limit", KLINES_LIMIT),
-                ("endTime", &end_time.to_string()),
-            ]
+    let time_string: &str;
+    let mut time_param: u64;
+    if *fetch_type == KlinesFetchType::Recent {
+        time_string = "startTime";
+        time_param = utils::get_max_open_time(pool, table_name).await;
+    } else {
+        time_string = "endTime";
+        time_param = match *table_length {
+            0 => {
+                chrono::Utc::now().timestamp_millis() as u64
+                    + chrono::Duration::days(100).num_milliseconds() as u64
+            }
+            _ => utils::get_min_open_time(pool, table_name).await,
         };
-
-        let klines = fetch_klines(client, &params).await;
-        if klines.len() <= 1 {
-            println!("No more historical data to fetch");
-            break;
-        }
-
-        end_time = klines.first().unwrap()[0]
-            .as_u64()
-            .expect("Failed to get open time");
-        for kline in klines {
-            insert_kline(pool, table_name, &kline).await;
-        }
     }
-}
-
-async fn fetch_older_data(
-    pool: &PgPool,
-    client: &Client,
-    table_name: &str,
-    symbol: &str,
-    interval: &CryptoInterval,
-) {
-    println!("Fetching older data...");
-    let result: i64 = sqlx::query_scalar(&format!(
-        r#"
-        SELECT MIN(open_time) FROM {}
-        "#,
-        table_name
-    ))
-    .fetch_one(pool)
-    .await
-    .expect("Failed to get minimum open_time");
-
-    let mut end_time = result.abs() as u64;
 
     loop {
+        // If the limit is reached, stop fetching data
+        if let Some(limit) = limit {
+            if *table_length >= *limit {
+                println!("Limit reached");
+                break;
+            }
+        }
+
+        // Parameters for the request
         let params = [
             ("symbol", symbol),
             ("interval", &interval.to_binance_string()),
             ("limit", KLINES_LIMIT),
-            ("endTime", &end_time.to_string()),
+            (time_string, &time_param.to_string()),
         ];
 
-        let klines = fetch_klines(client, &params).await;
-        if klines.len() <= 1 {
-            println!("No more older data to fetch");
-            break;
-        }
-
-        end_time = klines.first().unwrap()[0]
-            .as_u64()
-            .expect("Failed to get open time");
-        for kline in klines {
-            insert_kline(pool, table_name, &kline).await;
-        }
-    }
-}
-
-async fn fetch_recent_data(
-    pool: &PgPool,
-    client: &Client,
-    table_name: &str,
-    symbol: &str,
-    interval: &CryptoInterval,
-) {
-    println!("Fetching recent data...");
-    let result: i64 = sqlx::query_scalar(&format!(
-        r#"
-        SELECT MAX(open_time) FROM {}
-        "#,
-        table_name
-    ))
-    .fetch_one(pool)
-    .await
-    .expect("Failed to get maximum open_time");
-
-    let mut start_time = result.abs() as u64;
-
-    loop {
-        let params = [
-            ("symbol", symbol),
-            ("interval", &interval.to_binance_string()),
-            ("limit", KLINES_LIMIT),
-            ("startTime", &start_time.to_string()),
-        ];
-
+        // Fetch klines
         let klines = fetch_klines(client, &params).await;
         if klines.len() <= 1 {
             println!("No more recent data to fetch");
             break;
         }
 
-        start_time = klines.last().unwrap()[0]
+        // Update the time parameter
+        time_param = match fetch_type {
+            KlinesFetchType::Recent => klines.last(),
+            KlinesFetchType::Older => klines.first(),
+        }
+        .unwrap()[0]
             .as_u64()
             .expect("Failed to get open time");
+
+        // Insert the klines
         for kline in klines {
-            insert_kline(pool, table_name, &kline).await;
+            let result = insert_kline(pool, table_name, &kline).await;
+            if result.is_ok() {
+                *table_length += 1;
+            }
         }
     }
 }
@@ -234,6 +163,7 @@ async fn fetch_klines(client: &Client, params: &[(&str, &str)]) -> Vec<serde_jso
         "Fetching klines... Time : {:?}",
         end_time_human.unwrap().to_rfc2822()
     );
+
     let response = client
         .get(&format!("{}/fapi/v1/klines", BINANCE_FUTURES_API_URL))
         .query(params)
@@ -249,51 +179,29 @@ async fn fetch_klines(client: &Client, params: &[(&str, &str)]) -> Vec<serde_jso
     data.as_array().expect("Failed to get klines").clone()
 }
 
-async fn insert_kline(pool: &PgPool, table_name: &str, kline: &serde_json::Value) {
+async fn insert_kline(
+    pool: &PgPool,
+    table_name: &str,
+    kline: &serde_json::Value,
+) -> Result<(), sqlx::Error> {
     let kline = kline.as_array().expect("Failed to get kline");
     let open_time = kline[0].as_u64().expect("Failed to get open time");
-    let open = kline[1]
-        .as_str()
-        .expect("Failed to get open")
-        .parse::<f64>()
-        .unwrap();
-    let high = kline[2]
-        .as_str()
-        .expect("Failed to get high")
-        .parse::<f64>()
-        .unwrap();
-    let low = kline[3]
-        .as_str()
-        .expect("Failed to get low")
-        .parse::<f64>()
-        .unwrap();
-    let close = kline[4]
-        .as_str()
-        .expect("Failed to get close")
-        .parse::<f64>()
-        .unwrap();
-    let volume = kline[5]
-        .as_str()
-        .expect("Failed to get volume")
-        .parse::<f64>()
-        .unwrap();
+    let open = utils::json_value_to_f64(&kline[1]);
+    let high = utils::json_value_to_f64(&kline[2]);
+    let low = utils::json_value_to_f64(&kline[3]);
+    let close = utils::json_value_to_f64(&kline[4]);
+    let volume = utils::json_value_to_f64(&kline[5]);
     let close_time = kline[6].as_u64().expect("Failed to get close time");
-    let quote_asset_volume = kline[7]
-        .as_str()
-        .expect("Failed to get quote asset volume")
-        .parse::<f64>()
-        .unwrap();
+    // If close time is after now, skip the kline
+    if close_time > chrono::Utc::now().timestamp_millis() as u64 {
+        return Err(sqlx::Error::ColumnNotFound(
+            "Close time is after now".to_string(),
+        ));
+    }
+    let quote_asset_volume = utils::json_value_to_f64(&kline[7]);
     let number_of_trades = kline[8].as_u64().expect("Failed to get number of trades");
-    let taker_buy_base_asset_volume = kline[9]
-        .as_str()
-        .expect("Failed to get taker buy base asset volume")
-        .parse::<f64>()
-        .unwrap();
-    let taker_buy_quote_asset_volume = kline[10]
-        .as_str()
-        .expect("Failed to get taker buy quote asset volume")
-        .parse::<f64>()
-        .unwrap();
+    let taker_buy_base_asset_volume = utils::json_value_to_f64(&kline[9]);
+    let taker_buy_quote_asset_volume = utils::json_value_to_f64(&kline[10]);
 
     let result = sqlx::query(&format!(
         r#"
@@ -316,14 +224,12 @@ async fn insert_kline(pool: &PgPool, table_name: &str, kline: &serde_json::Value
     .execute(pool)
     .await;
 
-    // match result {
-    //     Ok(_) => println!("Inserted kline with open time: {}", open_time),
-    //     Err(e) => println!("Failed to insert kline: {}", e),
-    // }
-
     if let Err(e) = result {
         println!("Failed to insert kline: {}", e);
+        return Err(e);
     }
+
+    Ok(())
 }
 
 async fn check_klines_integrity(pool: &PgPool, table_name: &str) {
