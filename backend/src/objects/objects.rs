@@ -5,6 +5,8 @@ use chrono::{DateTime, Utc}; // NaiveDateTime
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
 
+use crate::binance::klines;
+
 // --- Crypto Symbols --- //
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -259,6 +261,7 @@ pub struct KlineCollection {
     pub training_percentage: f64,
     pub training: Vec<Kline>,
     pub validation: Vec<Kline>,
+    pub past: Vec<Kline>,
 }
 
 impl KlineCollection {
@@ -269,6 +272,7 @@ impl KlineCollection {
             training_percentage: 1.0,
             training: Vec::new(),
             validation: Vec::new(),
+            past: Vec::new(),
         }
     }
 
@@ -300,15 +304,33 @@ impl KlineCollection {
         }
     }
 
+    pub fn get_first_past_open_time(&self) -> DateTime<Utc> {
+        if self.past.len() > 0 {
+            self.past.first().unwrap().open_time
+        } else {
+            self.get_first_open_time()
+        }
+    }
+
     pub fn display(&self) {
         println!(
-            "{{Symbol: {}, Interval: {}, Training percentage: {}, Length: {}, Limit minutes: {}}}",
+            "{{Symbol: {}, Interval: {}, Training percentage: {}, Lengths: {},{},({}), Limit minutes: {}}}",
             self.symbol,
             self.interval.to_string(),
             self.training_percentage,
-            self.get_length(),
+            self.training.len(),
+            self.validation.len(),
+            self.past.len(),
             self.get_limit_minutes()
         );
+    }
+
+    pub fn check_integrity(&self) {
+        if klines::utils::check_klines_collection_integrity(self) {
+            println!("Klines collection integrity passed ✓");
+        } else {
+            println!("Klines collection integrity FAILED X");
+        }
     }
 }
 

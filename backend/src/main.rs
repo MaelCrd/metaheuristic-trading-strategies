@@ -1,6 +1,9 @@
-use backend::objects::{
-    indicators::{Indicator, MovingAverage},
-    objects::{CryptoInterval, Kline, KlineCollection},
+use backend::{
+    binance::klines,
+    objects::{
+        indicators::{Indicator, MovingAverage},
+        objects::{CryptoInterval, KlineCollection},
+    },
 };
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
@@ -30,7 +33,7 @@ async fn main() {
     // binance::get_symbols_actual_info(&mut symbol_volumes_vec).await;
 
     let mut klines_collection: KlineCollection = KlineCollection::new();
-    let result = binance::klines::retrieve::retrieve_klines_simple(
+    if binance::klines::retrieve::retrieve_klines_simple(
         &mut klines_collection,
         "BTCUSDT",
         &CryptoInterval::Int1m,
@@ -38,30 +41,15 @@ async fn main() {
         0.75,
         false,
     )
-    .await;
-
-    if result.is_err() {
-        println!("Error: {:?}", result.err().unwrap());
+    .await
+    .is_err()
+    {
+        println!("Error retrieving klines");
         return;
     }
 
-    println!(
-        "Klines collection: {:?} / {:?}",
-        klines_collection.symbol, klines_collection.interval
-    );
-
-    println!(
-        "Klines length (train): {}",
-        klines_collection.training.len()
-    );
-    println!(
-        "Klines length (validation): {}",
-        klines_collection.validation.len()
-    );
-    println!(
-        "Klines length (total): {}",
-        klines_collection.training.len() + klines_collection.validation.len()
-    );
+    klines_collection.display();
+    klines_collection.check_integrity();
 
     // Print first and last open time
     println!(
@@ -73,31 +61,48 @@ async fn main() {
         klines_collection.get_last_open_time()
     );
 
-    // println!("Klines training:");
-    // for kline in klines_collection.training.iter() {
-    //     print!("{:?} / ", kline.open_time);
-    // }
-    // println!();
-    // println!("Klines validation:");
-    // for kline in klines_collection.validation.iter() {
-    //     print!("{:?} / ", kline.open_time);
-    // }
-    // println!();
-
-    // return;
-
-    // Indicator test
-    let mut indicator: Indicator = Indicator::MovingAverage(MovingAverage {
-        period: 3,
+    //
+    let indicator_1 = Indicator::MovingAverage(MovingAverage {
+        period: 4,
         values: Vec::<f64>::new(),
     });
-    let result =
-        binance::indicators::retrieve::retrieve_indicator(&klines_collection, &mut indicator).await;
 
-    if result.is_err() {
-        println!("Error: {:?}", result.err().unwrap());
+    if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_1)
+        .await
+        .is_err()
+    {
+        println!("Error retrieving klines");
         return;
     }
+
+    klines_collection.display();
+    klines_collection.check_integrity();
+
+    // Indicator test
+    let indicators: Vec<Indicator> = vec![
+        Indicator::MovingAverage(MovingAverage {
+            period: 3,
+            values: Vec::<f64>::new(),
+        }),
+        Indicator::MovingAverage(MovingAverage {
+            period: 7,
+            values: Vec::<f64>::new(),
+        }),
+    ];
+
+    if binance::indicators::retrieve::retrieve_extended_klines_max(
+        &mut klines_collection,
+        &indicators,
+    )
+    .await
+    .is_err()
+    {
+        println!("Error retrieving extended klines");
+        return;
+    }
+
+    klines_collection.display();
+    klines_collection.check_integrity();
 
     return;
 

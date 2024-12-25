@@ -1,5 +1,4 @@
 use chrono::DateTime;
-use chrono::TimeZone;
 use chrono::Utc;
 use sqlx::Row;
 
@@ -40,11 +39,12 @@ pub async fn retrieve_klines(
     training_percentage: f64,
     force_fetch: bool,
     only_before: Option<DateTime<Utc>>,
-    real_limit_n: Option<i32>,
+    additional_klines: Option<i32>, // will be added to the 'past' klines vector
 ) -> Result<(), sqlx::Error> {
     // Retrieve the klines from the database
     let table_name = utils::get_table_name(symbol, interval);
     let mut limit = limit_minutes / interval.to_minutes();
+    let mut only_before: Option<DateTime<Utc>> = only_before;
 
     // Check if the table exists
     let pool = utils::connect_to_db().await;
@@ -74,13 +74,16 @@ pub async fn retrieve_klines(
         .unwrap();
     }
 
+    if additional_klines != None {
+        only_before = Some(klines_collection.get_first_past_open_time());
+        limit = additional_klines.unwrap() as i64 - klines_collection.past.len() as i64;
+        klines_collection.past.reserve(limit as usize);
+    }
+
     let before_cond = match only_before {
-        Some(only_before) => format!("\n\rWHERE open_time <= {}", only_before.timestamp_millis()),
+        Some(only_before) => format!("\n\rWHERE open_time < {}", only_before.timestamp_millis()),
         None => "\n\r".to_string(),
     };
-    if Some(only_before) != None && real_limit_n != None {
-        limit = real_limit_n.unwrap() as i64;
-    }
 
     // Query the database
     let result = sqlx::query(&format!(
@@ -93,11 +96,16 @@ pub async fn retrieve_klines(
         table_name, before_cond, limit
     )).fetch_all(&pool).await.unwrap();
 
+    println!("Retrieved {} klines from the database", result.len());
+
     // Parse the results and add them to the klines collection
     let training_length = (result.len() as f64 * training_percentage).round() as usize;
     let mut i = 0;
+    let mut past_klines = Vec::<Kline>::with_capacity(result.len());
     for row in result.iter().rev() {
-        if i < training_length {
+        if additional_klines != None {
+            &mut past_klines
+        } else if i < training_length {
             &mut klines_collection.training
         } else {
             &mut klines_collection.validation
@@ -120,6 +128,12 @@ pub async fn retrieve_klines(
         i += 1;
     }
 
+    // If additional klines are requested
+    if past_klines.len() > 0 {
+        // Add the past klines to the 'past' vector, before any already present klines
+        klines_collection.past.splice(0..0, past_klines);
+    }
+
     klines_collection.symbol = symbol.to_string();
     klines_collection.interval = interval.clone();
 
@@ -127,17 +141,14 @@ pub async fn retrieve_klines(
 }
 
 pub async fn retrieve_klines_extend(
-    klines_collection_model: &KlineCollection,
-    klines_collection_extended: &mut KlineCollection,
+    klines_collection: &mut KlineCollection,
     additional_klines: i32,
 ) -> Result<(), sqlx::Error> {
     // Calculate the new limit_minutes
-    let last_open_time = klines_collection_model
-        .get_last_open_time()
-        .timestamp_millis();
-    let new_limit_minutes = klines_collection_model.get_length() as i64 * klines_collection_model.interval.to_minutes()
+    let last_open_time = klines_collection.get_last_open_time().timestamp_millis();
+    let new_limit_minutes = klines_collection.get_length() as i64 * klines_collection.interval.to_minutes()
         + (Utc::now().timestamp_millis() - last_open_time) / 60000  // Difference between the last open time and now
-        + klines_collection_model.interval.to_minutes() * additional_klines as i64; // Additional klines to the limit
+        + klines_collection.interval.to_minutes() * additional_klines as i64; // Additional klines to the limit
 
     println!(
         "Difference between the last open time and now: {}",
@@ -145,27 +156,21 @@ pub async fn retrieve_klines_extend(
     );
     println!(
         "Additional klines to the limit: {}",
-        klines_collection_model.interval.to_minutes() * additional_klines as i64
+        klines_collection.interval.to_minutes() * additional_klines as i64
     );
-
-    klines_collection_model.display();
 
     println!("New limit minutes: {}", new_limit_minutes);
 
     // Retrieve the klines from the database
     retrieve_klines(
-        klines_collection_extended,
-        &klines_collection_model.symbol,
-        &klines_collection_model.interval,
+        klines_collection,
+        &klines_collection.symbol.clone(),
+        &klines_collection.interval.clone(),
         new_limit_minutes,
-        klines_collection_model.training_percentage,
+        klines_collection.training_percentage,
         false,
-        Some(klines_collection_model.get_last_open_time()),
-        Some(klines_collection_model.get_length() + additional_klines),
+        Some(klines_collection.get_last_open_time()),
+        Some(additional_klines),
     )
-    .await;
-
-    klines_collection_extended.display();
-
-    Ok(())
+    .await
 }

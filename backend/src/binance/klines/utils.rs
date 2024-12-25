@@ -1,3 +1,4 @@
+use binance_spot_connector_rust::market_stream::kline;
 use sqlx::PgPool;
 use std::env;
 
@@ -168,6 +169,48 @@ pub fn json_value_to_f64(value: &serde_json::Value) -> f64 {
         .expect("Failed to get value")
         .parse::<f64>()
         .unwrap()
+}
+
+// Check KlineCollection klines integrity
+pub fn check_klines_collection_integrity(klines_collection: &KlineCollection) -> bool {
+    // Create an iterator over all klines
+    let all_klines_iter = klines_collection
+        .past
+        .iter()
+        .chain(klines_collection.training.iter())
+        .chain(klines_collection.validation.iter());
+
+    // Get the interval in seconds
+    let interval_sec = klines_collection.interval.to_minutes() * 60;
+
+    // Check if all klines are in the correct order
+    let check_1 = all_klines_iter
+        .clone()
+        .zip(all_klines_iter.clone().skip(1))
+        .all(|(kline1, kline2)| kline1.open_time < kline2.open_time);
+
+    let check_2 = all_klines_iter
+        .clone()
+        .zip(all_klines_iter.clone().skip(1))
+        .all(|(kline1, kline2)| {
+            kline2.open_time.timestamp() - kline1.open_time.timestamp() == interval_sec
+        });
+
+    // Print all klines (debug)
+    // println!("Past klines:");
+    // for kline in klines_collection.past.iter() {
+    //     println!("{:?}", kline.open_time);
+    // }
+    // println!("Training klines:");
+    // for kline in klines_collection.training.iter() {
+    //     println!("{:?}", kline.open_time);
+    // }
+    // println!("Validation klines:");
+    // for kline in klines_collection.validation.iter() {
+    //     println!("{:?}", kline.open_time);
+    // }
+
+    check_1 && check_2
 }
 
 // pub async fn check_table_empty(pool: &PgPool, table_name: &str) -> bool {
