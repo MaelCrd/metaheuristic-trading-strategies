@@ -1,11 +1,14 @@
+use sqlx::PgPool;
 use std::env;
 
-use sqlx::PgPool;
-
-use crate::objects::objects::{CryptoInterval, Kline, KlineCollection};
+use crate::objects::objects::{CryptoInterval, KlineCollection};
 
 pub fn get_table_name(symbol: &str, interval: &CryptoInterval) -> String {
     format!("klines_{}_{}", symbol, interval.to_string()).to_lowercase()
+}
+
+pub fn get_table_name_collection(klines_collection: &KlineCollection) -> String {
+    get_table_name(&klines_collection.symbol, &klines_collection.interval)
 }
 
 pub async fn connect_to_db() -> PgPool {
@@ -64,6 +67,70 @@ pub async fn get_table_length(pool: &PgPool, table_name: &str) -> i64 {
     .fetch_one(pool)
     .await
     .expect("Failed to get table length")
+}
+
+pub async fn check_column_exists(pool: &PgPool, table_name: &str, column_name: &str) -> bool {
+    sqlx::query_scalar(&format!(
+        r#"
+        SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_name = '{}' AND column_name = '{}'
+        )
+        "#,
+        table_name, column_name
+    ))
+    .fetch_one(pool)
+    .await
+    .expect("Failed to check if column exists")
+}
+
+pub async fn check_columns_exists(
+    pool: &PgPool,
+    table_name: &str,
+    column_names: &Vec<String>,
+) -> bool {
+    let mut exists = true;
+
+    for column_name in column_names {
+        exists = check_column_exists(pool, table_name, column_name).await;
+
+        if !exists {
+            break;
+        }
+    }
+
+    exists
+}
+
+pub async fn create_indicator_column(
+    pool: &PgPool,
+    table_name: &str,
+    column_name: &str,
+) -> Result<(), sqlx::Error> {
+    let result = sqlx::query(&format!(
+        r#"
+        ALTER TABLE {} ADD COLUMN {} FLOAT
+        "#,
+        table_name, column_name
+    ))
+    .execute(pool)
+    .await;
+
+    result.map(|_| ())
+}
+
+pub async fn create_indicator_columns(
+    pool: &PgPool,
+    table_name: &str,
+    column_names: &Vec<String>,
+) -> Result<(), sqlx::Error> {
+    for column_name in column_names {
+        create_indicator_column(pool, table_name, column_name)
+            .await
+            .unwrap();
+    }
+
+    Ok(())
 }
 
 pub async fn get_min_open_time(pool: &PgPool, table_name: &str) -> u64 {

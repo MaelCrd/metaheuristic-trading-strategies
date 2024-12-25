@@ -1,3 +1,3 @@
 mod acquire;
 pub mod retrieve;
-mod utils;
+pub mod utils;

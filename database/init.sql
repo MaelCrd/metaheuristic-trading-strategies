@@ -12,11 +12,15 @@ CREATE TABLE IF NOT EXISTS crypto_symbol (
     UNIQUE (symbol)
 );
 
+-- Create crypto_interval ENUM type
+CREATE TYPE crypto_interval AS ENUM ('Int1m', 'Int5m', 'Int15m', 'Int30m', 'Int1h', 'Int2h', 'Int4h', 'Int6h', 'Int8h', 'Int12h', 'Int1d', 'Int3d', 'Int1w', 'Int1M');
+
 -- Create crypto_list Table
 CREATE TABLE IF NOT EXISTS crypto_list (
     id SERIAL PRIMARY KEY,
     hidden BOOLEAN DEFAULT FALSE NOT NULL,
     name VARCHAR(255) NOT NULL,
+    interval crypto_interval NOT NULL,
     type VARCHAR(255) NOT NULL
 );
 
@@ -44,10 +48,13 @@ CREATE TABLE IF NOT EXISTS result (
     other_parameters TEXT
 );
 
+-- Create state ENUM type
+CREATE TYPE state_enum AS ENUM ('CREATED', 'PENDING', 'RUNNING', 'CANCELLING', 'CANCELLED', 'COMPLETED', 'FAILED');
+
 -- Create task Table
 CREATE TABLE IF NOT EXISTS task (
     id SERIAL PRIMARY KEY,
-    state VARCHAR(255) NOT NULL,
+    state state_enum NOT NULL DEFAULT 'CREATED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     other_parameters TEXT,
     mh_object_id INTEGER,
@@ -65,8 +72,8 @@ VALUES ('BTC', 'Bitcoin', 1.0, '2021-01-01 00:00:00'),
        ('XRP', 'Ripple', 0.3, '2021-01-01 00:00:00');
 
 -- Insert data into crypto_list Table
-INSERT INTO crypto_list (name, type)
-VALUES ('Top 2', 'Top');
+INSERT INTO crypto_list (name, type, interval)
+VALUES ('Top 2', 'Top', 'Int1h');
 
 -- Insert data into crypto_list_x_crypto_symbol Table
 INSERT INTO crypto_list_x_crypto_symbol (crypto_list_id, crypto_symbol_id)
@@ -107,7 +114,7 @@ ON t.result_id = r.id;
 
 -- Update task state to 'COMPLETED' and set result_id to 1
 UPDATE task
-SET state = 'ERROR',
+SET state = 'FAILED',
     result_id = 1
 WHERE id = 1;
 

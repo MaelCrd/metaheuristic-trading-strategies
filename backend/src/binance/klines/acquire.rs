@@ -5,7 +5,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 use super::utils;
-use crate::objects::objects::CryptoInterval;
+use crate::{objects::objects::CryptoInterval, utils::loading};
 
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
 const KLINES_LIMIT: &str = "5";
@@ -24,6 +24,7 @@ pub async fn acquire_klines(
     limit: &Option<i64>,
     table_exists: bool,
     table_length: &mut i64,
+    force_fetch: bool,
 ) -> Result<(), sqlx::Error> {
     let table_name = utils::get_table_name(symbol, &interval);
     println!("Table name: {}", table_name);
@@ -52,6 +53,7 @@ pub async fn acquire_klines(
             table_length,
             limit,
             &KlinesFetchType::Older,
+            false,
         )
         .await;
     } else {
@@ -65,6 +67,7 @@ pub async fn acquire_klines(
             table_length,
             limit,
             &KlinesFetchType::Recent,
+            force_fetch,
         )
         .await;
         loop_fetch_klines(
@@ -76,6 +79,7 @@ pub async fn acquire_klines(
             table_length,
             limit,
             &KlinesFetchType::Older,
+            false,
         )
         .await;
     }
@@ -95,6 +99,7 @@ async fn loop_fetch_klines(
     table_length: &mut i64,
     limit: &Option<i64>,
     fetch_type: &KlinesFetchType,
+    force_fetch: bool,
 ) {
     let time_string: &str;
     let mut time_param: u64;
@@ -115,7 +120,8 @@ async fn loop_fetch_klines(
     loop {
         // If the limit is reached, stop fetching data
         if let Some(limit) = limit {
-            if *table_length >= *limit {
+            loading::print_loading_progress(*table_length as i32, *limit as i32);
+            if !force_fetch && *table_length >= *limit {
                 println!("Limit reached");
                 break;
             }
@@ -159,7 +165,7 @@ async fn fetch_klines(client: &Client, params: &[(&str, &str)]) -> Vec<serde_jso
     let end_time_human = chrono::Utc
         .timestamp_millis_opt(params[3].1.parse().unwrap())
         .single();
-    println!(
+    print!(
         "Fetching klines... Time : {:?}",
         end_time_human.unwrap().to_rfc2822()
     );
@@ -225,7 +231,7 @@ async fn insert_kline(
     .await;
 
     if let Err(e) = result {
-        println!("Failed to insert kline: {}", e);
+        // println!("Failed to insert kline: {}", e);
         return Err(e);
     }
 
@@ -244,7 +250,7 @@ async fn check_klines_integrity(pool: &PgPool, table_name: &str) {
     .await
     .expect("Failed to get klines count");
 
-    println!("Klines count: {}", result);
+    print!("Klines count: {} / ", result);
 
     // Check if each difference between the open time of two consecutive klines is equal to the interval
     // Get interval between two consecutive klines (first kline open time - second kline open time)
@@ -264,7 +270,7 @@ async fn check_klines_integrity(pool: &PgPool, table_name: &str) {
 
     let interval: i64 = intervals.last().unwrap().expect("Failed to get interval");
 
-    println!("Interval: {}", interval);
+    print!("Interval: {} / ", interval);
 
     //
     let result: i64 = sqlx::query_scalar(&format!(
@@ -281,11 +287,11 @@ async fn check_klines_integrity(pool: &PgPool, table_name: &str) {
     .await
     .expect("Failed to get differences count");
 
-    println!("Differences count: {}", result);
+    print!("Differences count: {} / ", result);
 
     if result == 0 {
-        println!("Klines integrity is OK");
+        println!("=> Klines integrity is OK");
     } else {
-        panic!("Klines integrity is NOT OK");
+        panic!("=> Klines integrity is NOT OK");
     }
 }

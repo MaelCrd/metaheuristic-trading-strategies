@@ -254,6 +254,9 @@ pub struct Kline {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KlineCollection {
+    pub symbol: String,
+    pub interval: CryptoInterval,
+    pub training_percentage: f64,
     pub training: Vec<Kline>,
     pub validation: Vec<Kline>,
 }
@@ -261,9 +264,51 @@ pub struct KlineCollection {
 impl KlineCollection {
     pub fn new() -> KlineCollection {
         KlineCollection {
+            symbol: String::new(),
+            interval: CryptoInterval::Int1m,
+            training_percentage: 1.0,
             training: Vec::new(),
             validation: Vec::new(),
         }
+    }
+
+    pub fn get_length(&self) -> i32 {
+        self.training.len() as i32 + self.validation.len() as i32
+    }
+
+    pub fn get_limit_minutes(&self) -> i64 {
+        self.get_length() as i64 * self.interval.to_minutes()
+    }
+
+    pub fn get_last_open_time(&self) -> DateTime<Utc> {
+        if self.validation.len() > 0 {
+            self.validation.last().unwrap().open_time
+        } else if self.training.len() > 0 {
+            self.training.last().unwrap().open_time
+        } else {
+            Utc::now()
+        }
+    }
+
+    pub fn get_first_open_time(&self) -> DateTime<Utc> {
+        if self.training.len() > 0 {
+            self.training.first().unwrap().open_time
+        } else if self.validation.len() > 0 {
+            self.validation.first().unwrap().open_time
+        } else {
+            Utc::now()
+        }
+    }
+
+    pub fn display(&self) {
+        println!(
+            "{{Symbol: {}, Interval: {}, Training percentage: {}, Length: {}, Limit minutes: {}}}",
+            self.symbol,
+            self.interval.to_string(),
+            self.training_percentage,
+            self.get_length(),
+            self.get_limit_minutes()
+        );
     }
 }
 
