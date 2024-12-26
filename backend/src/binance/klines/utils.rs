@@ -1,8 +1,7 @@
-use binance_spot_connector_rust::market_stream::kline;
 use sqlx::PgPool;
 use std::env;
 
-use crate::objects::objects::{CryptoInterval, KlineCollection};
+use crate::objects::{intervals::CryptoInterval, klines::KlineCollection};
 
 pub fn get_table_name(symbol: &str, interval: &CryptoInterval) -> String {
     format!("klines_{}_{}", symbol, interval.to_string()).to_lowercase()

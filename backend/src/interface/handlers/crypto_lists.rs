@@ -3,7 +3,10 @@ use rocket::State;
 use rocket::{get, post, put};
 use sqlx::PgPool;
 
-use crate::objects::objects::{CreateCryptoList, CryptoInterval, CryptoListComplete};
+use crate::objects::{
+    intervals::CryptoInterval,
+    objects::{CreateCryptoList, CryptoListComplete},
+};
 
 // Define a route to get all crypto lists
 #[get("/crypto_list?<id>")]

@@ -5,7 +5,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 use super::utils;
-use crate::{objects::objects::CryptoInterval, utils::loading};
+use crate::{objects::intervals::CryptoInterval, utils::loading};
 
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
 const KLINES_LIMIT: &str = "5";

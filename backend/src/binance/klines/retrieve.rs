@@ -4,9 +4,10 @@ use sqlx::Row;
 
 use super::acquire;
 use super::utils;
-use crate::objects::objects::CryptoInterval;
-use crate::objects::objects::Kline;
-use crate::objects::objects::KlineCollection;
+use crate::objects::{
+    intervals::CryptoInterval,
+    klines::{Kline, KlineCollection},
+};
 
 // Function to retrieve klines from database with the given parameters
 pub async fn retrieve_klines_simple(

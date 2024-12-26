@@ -2,49 +2,55 @@ use sqlx::PgPool;
 
 use super::super::klines::utils;
 use crate::objects::indicators::IndicatorTrait;
-use crate::objects::{indicators::Indicator, objects::KlineCollection};
+use crate::objects::{indicators::Indicator, klines::KlineCollection};
 
 pub async fn compute_indicator(
-    _pool: &PgPool,
-    indicator: &Indicator,
+    pool: &PgPool,
+    indicator: &mut Indicator,
     kline_collection: &KlineCollection,
 ) -> Result<(), sqlx::Error> {
     // We assume klines are already present in the database
     let table_name = utils::get_table_name_collection(&kline_collection);
-    let _number_of_rows = kline_collection.get_length();
 
     // Check if the table exists
     let pool = utils::connect_to_db().await;
-    let table_exists = utils::check_table_exists(&pool, &table_name).await;
-    let _table_length = match table_exists {
-        true => utils::get_table_length(&pool, &table_name).await,
-        false => 0,
-    };
 
-    // Query the database to retrieve the open_time of rows that are missing the indicator columns
-    // and between the first and last open time
-    let first_open_time = kline_collection.get_first_open_time();
-    let last_open_time = kline_collection.get_last_open_time();
-    let result = sqlx::query(&format!(
-        r#"
-        SELECT open_time
-        FROM {}
-        WHERE {} IS NULL
-        AND open_time BETWEEN {} AND {}
-        ORDER BY open_time ASC
-        "#,
-        table_name,
-        indicator.column_names().join(" IS NULL OR "),
-        first_open_time.timestamp_millis(),
-        last_open_time.timestamp_millis()
-    ))
-    .fetch_all(&pool)
-    .await
-    .unwrap();
+    // Calculate indicator values
+    indicator.calculate(kline_collection);
 
-    let missing_rows = result.len();
+    // Insert the indicator values into the database
+    let values: Vec<&Vec<f64>> = indicator.get_values();
+    let values_elements_len = values[0].len();
+    let columns = indicator.column_names();
+    for i in 0..values_elements_len {
+        let mut columns_str = String::new();
+        for j in 0..values.len() {
+            columns_str.push_str(&columns[j]);
+            columns_str.push_str(" = ");
+            columns_str.push_str(&values[j][i].to_string());
+            if j < values.len() - 1 {
+                columns_str.push_str(", ");
+            }
+        }
 
-    println!("Missing rows: {}", missing_rows);
+        sqlx::query(&format!(
+            r#"
+            UPDATE {}
+            SET {}
+            WHERE open_time = {}
+            "#,
+            table_name,
+            columns_str,
+            kline_collection
+                .get_rev(i.try_into().unwrap())
+                .unwrap()
+                .open_time
+                .timestamp_millis()
+        ))
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
 
     Ok(())
 }

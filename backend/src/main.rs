@@ -1,9 +1,7 @@
-use backend::{
-    binance::klines,
-    objects::{
-        indicators::{Indicator, MovingAverage},
-        objects::{CryptoInterval, KlineCollection},
-    },
+use backend::objects::{
+    indicators::{Indicator, MovingAverage, StochasticOscillator},
+    intervals::CryptoInterval,
+    klines::KlineCollection,
 };
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
@@ -37,7 +35,7 @@ async fn main() {
         &mut klines_collection,
         "BTCUSDT",
         &CryptoInterval::Int1m,
-        chrono::Duration::minutes(20).num_minutes(),
+        chrono::Duration::minutes(10).num_minutes(),
         0.75,
         false,
     )
@@ -49,7 +47,7 @@ async fn main() {
     }
 
     klines_collection.display();
-    klines_collection.check_integrity();
+    // klines_collection.check_integrity();
 
     // Print first and last open time
     println!(
@@ -62,12 +60,60 @@ async fn main() {
     );
 
     //
-    let indicator_1 = Indicator::MovingAverage(MovingAverage {
+    // let mut indicator_1 = Indicator::MovingAverage(MovingAverage {
+    //     period: 4,
+    //     values: Vec::<f64>::new(),
+    // });
+
+    // if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_1)
+    //     .await
+    //     .is_err()
+    // {
+    //     println!("Error retrieving klines");
+    //     return;
+    // }
+
+    // klines_collection.display();
+    // // klines_collection.check_integrity();
+
+    // // Indicator test
+    // let indicators: Vec<Indicator> = vec![
+    //     Indicator::MovingAverage(MovingAverage {
+    //         period: 3,
+    //         values: Vec::<f64>::new(),
+    //     }),
+    //     Indicator::MovingAverage(MovingAverage {
+    //         period: 7,
+    //         values: Vec::<f64>::new(),
+    //     }),
+    // ];
+
+    // if binance::indicators::retrieve::retrieve_extended_klines_max(
+    //     &mut klines_collection,
+    //     &indicators,
+    // )
+    // .await
+    // .is_err()
+    // {
+    //     println!("Error retrieving extended klines");
+    //     return;
+    // }
+
+    // klines_collection.display();
+    // klines_collection.check_integrity();
+
+    // let mut indicator_2 = Indicator::StochasticOscillator(StochasticOscillator {
+    //     k_period: 14,
+    //     d_period: 3,
+    //     k_values: Vec::<f64>::new(),
+    //     d_values: Vec::<f64>::new(),
+    // });
+    let mut indicator_2 = Indicator::MovingAverage(MovingAverage {
         period: 4,
         values: Vec::<f64>::new(),
     });
 
-    if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_1)
+    if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_2)
         .await
         .is_err()
     {
@@ -75,34 +121,16 @@ async fn main() {
         return;
     }
 
-    klines_collection.display();
-    klines_collection.check_integrity();
-
     // Indicator test
-    let indicators: Vec<Indicator> = vec![
-        Indicator::MovingAverage(MovingAverage {
-            period: 3,
-            values: Vec::<f64>::new(),
-        }),
-        Indicator::MovingAverage(MovingAverage {
-            period: 7,
-            values: Vec::<f64>::new(),
-        }),
-    ];
-
-    if binance::indicators::retrieve::retrieve_extended_klines_max(
-        &mut klines_collection,
-        &indicators,
-    )
-    .await
-    .is_err()
+    if binance::indicators::retrieve::retrieve_indicator(&klines_collection, &mut indicator_2)
+        .await
+        .is_err()
     {
-        println!("Error retrieving extended klines");
+        println!("Error retrieving indicator");
         return;
     }
 
-    klines_collection.display();
-    klines_collection.check_integrity();
+    println!("Indicator: {:?}", indicator_2);
 
     return;
 
