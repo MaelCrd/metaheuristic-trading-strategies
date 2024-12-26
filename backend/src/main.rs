@@ -1,3 +1,5 @@
+use std::env;
+
 use backend::objects::{
     indicators::{Indicator, MovingAverage, StochasticOscillator},
     intervals::CryptoInterval,
@@ -21,6 +23,9 @@ async fn main() {
     // Load the environment variables from the .env file
     assert!(dotenv().is_ok());
 
+    let args: Vec<String> = env::args().collect();
+    let minutes = args[1].parse::<i64>().unwrap();
+
     // // Spawn the listener task
     // tokio::spawn(async move {
     //     listener::listen_for_updates(rx).await;
@@ -35,7 +40,7 @@ async fn main() {
         &mut klines_collection,
         "BTCUSDT",
         &CryptoInterval::Int1m,
-        chrono::Duration::minutes(10).num_minutes(),
+        chrono::Duration::minutes(minutes).num_minutes(),
         0.75,
         false,
     )
@@ -45,6 +50,8 @@ async fn main() {
         println!("Error retrieving klines");
         return;
     }
+
+    ////// pas recalculer les indicateurs si on a déjà les données sur une periode etc etc
 
     klines_collection.display();
     // klines_collection.check_integrity();
@@ -102,16 +109,16 @@ async fn main() {
     // klines_collection.display();
     // klines_collection.check_integrity();
 
-    // let mut indicator_2 = Indicator::StochasticOscillator(StochasticOscillator {
-    //     k_period: 14,
-    //     d_period: 3,
-    //     k_values: Vec::<f64>::new(),
-    //     d_values: Vec::<f64>::new(),
-    // });
-    let mut indicator_2 = Indicator::MovingAverage(MovingAverage {
-        period: 4,
-        values: Vec::<f64>::new(),
+    let mut indicator_2 = Indicator::StochasticOscillator(StochasticOscillator {
+        k_period: 14,
+        d_period: 3,
+        k_values: Vec::<Option<f64>>::new(),
+        d_values: Vec::<Option<f64>>::new(),
     });
+    // let mut indicator_2 = Indicator::MovingAverage(MovingAverage {
+    //     period: 4,
+    //     values: Vec::<Option<f64>>::new(),
+    // });
 
     if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_2)
         .await
@@ -120,6 +127,8 @@ async fn main() {
         println!("Error retrieving klines");
         return;
     }
+
+    klines_collection.display();
 
     // Indicator test
     if binance::indicators::retrieve::retrieve_indicator(&klines_collection, &mut indicator_2)
@@ -130,7 +139,7 @@ async fn main() {
         return;
     }
 
-    println!("Indicator: {:?}", indicator_2);
+    // println!("Final Indicator: {:?}", indicator_2);
 
     return;
 

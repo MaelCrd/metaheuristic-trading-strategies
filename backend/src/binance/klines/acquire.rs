@@ -8,8 +8,8 @@ use super::utils;
 use crate::{objects::intervals::CryptoInterval, utils::loading};
 
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
-const KLINES_LIMIT: &str = "5";
-const REQUESTS_DELAY_SEC: u64 = 1;
+const KLINES_LIMIT: &str = "25";
+const REQUESTS_DELAY_MILLIS: u64 = 300;
 
 #[derive(PartialEq)]
 enum KlinesFetchType {
@@ -57,19 +57,24 @@ pub async fn acquire_klines(
         )
         .await;
     } else {
-        println!("Table exists, fetching recent and older data...");
-        loop_fetch_klines(
-            &pool,
-            &client,
-            &table_name,
-            symbol,
-            interval,
-            table_length,
-            limit,
-            &KlinesFetchType::Recent,
-            force_fetch,
-        )
-        .await;
+        println!(
+            "Table exists, fetching (recent ({})) and older data...",
+            force_fetch
+        );
+        if force_fetch {
+            loop_fetch_klines(
+                &pool,
+                &client,
+                &table_name,
+                symbol,
+                interval,
+                table_length,
+                limit,
+                &KlinesFetchType::Recent,
+                force_fetch,
+            )
+            .await;
+        }
         loop_fetch_klines(
             &pool,
             &client,
@@ -181,7 +186,7 @@ async fn fetch_klines(client: &Client, params: &[(&str, &str)]) -> Vec<serde_jso
         .expect("Failed to convert response to string");
 
     let data: serde_json::Value = serde_json::from_str(&response).expect("Failed to parse klines");
-    sleep(Duration::from_secs(REQUESTS_DELAY_SEC)).await; // Add a delay between requests
+    sleep(Duration::from_millis(REQUESTS_DELAY_MILLIS)).await; // Add a delay between requests
     data.as_array().expect("Failed to get klines").clone()
 }
 

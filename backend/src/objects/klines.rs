@@ -44,6 +44,26 @@ impl KlineCollection {
         }
     }
 
+    // Return the kline at the given index (normal)
+    // (0 -> first training, 1 -> second training, ... , last validation)
+    pub fn get(&self, index: i32) -> Option<&Kline> {
+        let validation_len = self.validation.len() as i32;
+        let training_len = self.training.len() as i32;
+        let past_len = self.past.len() as i32;
+        let total = validation_len + training_len + past_len;
+        if index < 0 || index >= total {
+            return None;
+        }
+        if index < training_len {
+            return self.training.get(index as usize);
+        }
+        if index < training_len + validation_len {
+            return self.validation.get((index - training_len) as usize);
+        }
+        self.past
+            .get((index - training_len - validation_len) as usize)
+    }
+
     // Return the kline at the given index (reverse)
     // (0 -> last validation, 1 -> one before last validation, ... , first past)
     pub fn get_rev(&self, index: i32) -> Option<&Kline> {

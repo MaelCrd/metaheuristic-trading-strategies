@@ -1,13 +1,11 @@
-use sqlx::PgPool;
-
 use super::super::klines::utils;
 use crate::objects::indicators::IndicatorTrait;
 use crate::objects::{indicators::Indicator, klines::KlineCollection};
 
 pub async fn compute_indicator(
-    pool: &PgPool,
     indicator: &mut Indicator,
     kline_collection: &KlineCollection,
+    missing_rows: &Vec<i32>,
 ) -> Result<(), sqlx::Error> {
     // We assume klines are already present in the database
     let table_name = utils::get_table_name_collection(&kline_collection);
@@ -16,10 +14,13 @@ pub async fn compute_indicator(
     let pool = utils::connect_to_db().await;
 
     // Calculate indicator values
-    indicator.calculate(kline_collection);
+    indicator.calculate(kline_collection, missing_rows);
+
+    //
+    println!("Indicator values: {:?}", indicator);
 
     // Insert the indicator values into the database
-    let values: Vec<&Vec<f64>> = indicator.get_values();
+    let values: Vec<&Vec<Option<f64>>> = indicator.get_values();
     let values_elements_len = values[0].len();
     let columns = indicator.column_names();
     for i in 0..values_elements_len {
@@ -27,7 +28,7 @@ pub async fn compute_indicator(
         for j in 0..values.len() {
             columns_str.push_str(&columns[j]);
             columns_str.push_str(" = ");
-            columns_str.push_str(&values[j][i].to_string());
+            columns_str.push_str(&values[j][i].unwrap().to_string());
             if j < values.len() - 1 {
                 columns_str.push_str(", ");
             }
@@ -42,7 +43,7 @@ pub async fn compute_indicator(
             table_name,
             columns_str,
             kline_collection
-                .get_rev(i.try_into().unwrap())
+                .get(i.try_into().unwrap())
                 .unwrap()
                 .open_time
                 .timestamp_millis()

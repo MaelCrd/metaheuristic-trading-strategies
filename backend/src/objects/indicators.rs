@@ -11,7 +11,7 @@ pub struct MovingAverage {
     // Parameters
     pub period: i32,
     // Values
-    pub values: Vec<f64>,
+    pub values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,7 +19,7 @@ pub struct ExponentialMovingAverage {
     // Parameters
     pub period: i32,
     // Values
-    pub values: Vec<f64>,
+    pub values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ pub struct RelativeStrengthIndex {
     // Parameters
     pub period: i32,
     // Values
-    pub values: Vec<f64>,
+    pub values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,9 +37,9 @@ pub struct MovingAverageConvergenceDivergence {
     pub long_period: i32,
     pub signal_period: i32,
     // Values
-    pub macd_values: Vec<f64>,
-    pub signal_values: Vec<f64>,
-    pub histogram_values: Vec<f64>,
+    pub macd_values: Vec<Option<f64>>,
+    pub signal_values: Vec<Option<f64>>,
+    pub histogram_values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,9 +48,9 @@ pub struct BollingerBands {
     pub period: i32,
     pub deviation: f64,
     // Values
-    pub upper_band_values: Vec<f64>,
-    pub middle_band_values: Vec<f64>,
-    pub lower_band_values: Vec<f64>,
+    pub upper_band_values: Vec<Option<f64>>,
+    pub middle_band_values: Vec<Option<f64>>,
+    pub lower_band_values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,7 +58,7 @@ pub struct FibonacciRetracement {
     // Parameters
     pub period: i32,
     // Values
-    pub values: Vec<f64>,
+    pub values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,8 +67,8 @@ pub struct StochasticOscillator {
     pub k_period: i32,
     pub d_period: i32,
     // Values
-    pub k_values: Vec<f64>,
-    pub d_values: Vec<f64>,
+    pub k_values: Vec<Option<f64>>,
+    pub d_values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,7 +76,7 @@ pub struct OnBalanceVolume {
     // Parameters
     pub period: i32,
     // Values
-    pub values: Vec<f64>,
+    pub values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,11 +86,11 @@ pub struct IchimokuCloud {
     pub base_period: i32,
     pub lagging_span: i32,
     // Values
-    pub conversion_line_values: Vec<f64>,
-    pub base_line_values: Vec<f64>,
-    pub lagging_span_values: Vec<f64>,
-    pub leading_span_a_values: Vec<f64>,
-    pub leading_span_b_values: Vec<f64>,
+    pub conversion_line_values: Vec<Option<f64>>,
+    pub base_line_values: Vec<Option<f64>>,
+    pub lagging_span_values: Vec<Option<f64>>,
+    pub leading_span_a_values: Vec<Option<f64>>,
+    pub leading_span_b_values: Vec<Option<f64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,15 +129,10 @@ pub trait IndicatorTrait {
     }
 
     // Calculates the indicator values
-    fn calculate(&mut self, kline_collection: &KlineCollection);
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>);
 
     // Get the values of the indicator
-    fn get_values(&self) -> Vec<&Vec<f64>>;
-
-    // // Get values length
-    // fn get_values_length(&self) -> i32 {
-    //     self.get_values()[0].len() as i32
-    // }
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>>;
 }
 
 impl IndicatorTrait for MovingAverage {
@@ -154,19 +149,28 @@ impl IndicatorTrait for MovingAverage {
     }
 
     fn store_row(&mut self, row: &PgRow) {
-        self.values.push(row.get(0));
+        match row.get(0) {
+            Some(value) => self.values.push(value),
+            None => self.values.push(None),
+        }
     }
 
-    // Checked and working correctly
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
-        self.reserve_space(kline_collection.get_length());
-        for i in 0..kline_collection.get_length() {
+    // Checked and working correctly @26/12/2024 (values, missing before & after)
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
+        println!(
+            "Calculating MA for missing_indices: {}-{:?}(rev)",
+            kline_collection.get_length(),
+            missing_indices,
+        );
+        for i in missing_indices {
+            let index = kline_collection.get_length() - 1 - i;
             let mut sum = 0.0;
             for j in 0..self.period {
                 // println!("i: {}, j: {}, i+j {}", i, j, i + j);
-                sum += kline_collection.get_rev(i + j).unwrap().close;
+                sum += kline_collection.get_rev(index + j).unwrap().close;
             }
-            self.values.push(sum / self.period as f64);
+            println!("Set at index: {}", *i as usize);
+            self.values[*i as usize] = Some(sum / self.period as f64);
             // println!(
             //     "gte_rev: ({}) : {:?}",
             //     i,
@@ -175,7 +179,7 @@ impl IndicatorTrait for MovingAverage {
         }
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
     }
 }
@@ -197,11 +201,11 @@ impl IndicatorTrait for ExponentialMovingAverage {
         self.values.push(row.get(0));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
     }
 }
@@ -223,11 +227,11 @@ impl IndicatorTrait for RelativeStrengthIndex {
         self.values.push(row.get(0));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
     }
 }
@@ -269,11 +273,11 @@ impl IndicatorTrait for MovingAverageConvergenceDivergence {
         self.histogram_values.push(row.get(2));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![
             &self.macd_values,
             &self.signal_values,
@@ -307,11 +311,11 @@ impl IndicatorTrait for BollingerBands {
         self.lower_band_values.push(row.get(2));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![
             &self.upper_band_values,
             &self.middle_band_values,
@@ -337,11 +341,11 @@ impl IndicatorTrait for FibonacciRetracement {
         self.values.push(row.get(0));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
     }
 }
@@ -364,20 +368,34 @@ impl IndicatorTrait for StochasticOscillator {
     }
 
     fn store_row(&mut self, row: &PgRow) {
-        self.k_values.push(row.get(0));
-        self.d_values.push(row.get(1));
+        match row.get(0) {
+            Some(value) => self.k_values.push(Some(value)),
+            None => self.k_values.push(None),
+        }
+        match row.get(1) {
+            Some(value) => self.d_values.push(Some(value)),
+            None => self.d_values.push(None),
+        }
     }
 
-    // Checked and working correctly
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    // Checked and working correctly @26/12/2024 (values, missing before & after)
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         let kline_collection_length = kline_collection.get_length();
-        self.reserve_space(kline_collection_length);
+        // Extend the k_values from the beginning
+        self.k_values
+            .splice(0..0, vec![None; self.d_period as usize]);
+        // Create a vector of the indices additional for d_values calculation
+        let iter_kline = (-self.d_period..0).collect::<Vec<_>>();
         // Calculate the K values
-        for i in 0..kline_collection_length + self.d_period {
+        for i in missing_indices.iter().chain(iter_kline.iter()) {
+            // let index = kline_collection_length - 1 - i;
+            let index = kline_collection_length - 1 - i;
+            let array_index = kline_collection_length + self.d_period - 1 - index;
+            // println!("Calculating SO for index: {}", index);
             let mut max = 0.0;
             let mut min = f64::MAX;
             for j in 0..self.k_period {
-                let kline = kline_collection.get_rev(i + j).unwrap();
+                let kline = kline_collection.get_rev(index + j).unwrap();
                 if kline.high > max {
                     max = kline.high;
                 }
@@ -385,24 +403,25 @@ impl IndicatorTrait for StochasticOscillator {
                     min = kline.low;
                 }
             }
-            self.k_values
-                .push((kline_collection.get_rev(i).unwrap().close - min) / (max - min));
+            self.k_values[array_index as usize] =
+                Some((kline_collection.get_rev(index).unwrap().close - min) / (max - min));
         }
 
         // Calculate the D values
-        for i in 0..kline_collection_length {
+        for i in missing_indices {
+            // println!("Calculating SO D for index: {}", i);
             let mut sum = 0.0;
             for j in 0..self.d_period {
-                sum += self.k_values[(i + j) as usize];
+                sum += self.k_values[(self.d_period + i - j) as usize].unwrap();
             }
-            self.d_values.push(sum / self.d_period as f64);
+            self.d_values[*i as usize] = Some(sum / self.d_period as f64);
         }
 
         // Remove the +self.period values
-        self.k_values.drain(kline_collection_length as usize..);
+        self.k_values.drain(0..self.d_period as usize);
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.k_values, &self.d_values]
     }
 }
@@ -424,11 +443,11 @@ impl IndicatorTrait for OnBalanceVolume {
         self.values.push(row.get(0));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
     }
 }
@@ -484,11 +503,11 @@ impl IndicatorTrait for IchimokuCloud {
         self.leading_span_b_values.push(row.get(4));
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         return;
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![
             &self.conversion_line_values,
             &self.base_line_values,
@@ -556,23 +575,39 @@ impl IndicatorTrait for Indicator {
         }
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, kline_collection: &KlineCollection, missing_indices: &Vec<i32>) {
         match self {
-            Indicator::MovingAverage(indicator) => indicator.calculate(kline_collection),
-            Indicator::ExponentialMovingAverage(indicator) => indicator.calculate(kline_collection),
-            Indicator::RelativeStrengthIndex(indicator) => indicator.calculate(kline_collection),
-            Indicator::MovingAverageConvergenceDivergence(indicator) => {
-                indicator.calculate(kline_collection)
+            Indicator::MovingAverage(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
             }
-            Indicator::BollingerBands(indicator) => indicator.calculate(kline_collection),
-            Indicator::FibonacciRetracement(indicator) => indicator.calculate(kline_collection),
-            Indicator::StochasticOscillator(indicator) => indicator.calculate(kline_collection),
-            Indicator::OnBalanceVolume(indicator) => indicator.calculate(kline_collection),
-            Indicator::IchimokuCloud(indicator) => indicator.calculate(kline_collection),
+            Indicator::ExponentialMovingAverage(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::RelativeStrengthIndex(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::BollingerBands(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::FibonacciRetracement(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::StochasticOscillator(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::OnBalanceVolume(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
+            Indicator::IchimokuCloud(indicator) => {
+                indicator.calculate(kline_collection, missing_indices)
+            }
         }
     }
 
-    fn get_values(&self) -> Vec<&Vec<f64>> {
+    fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         match self {
             Indicator::MovingAverage(indicator) => indicator.get_values(),
             Indicator::ExponentialMovingAverage(indicator) => indicator.get_values(),

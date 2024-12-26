@@ -1,9 +1,35 @@
+use sqlx::Row;
+
 use super::super::klines;
 use super::compute;
 use crate::objects::{
     indicators::{Indicator, IndicatorTrait},
     klines::KlineCollection,
 };
+
+async fn query_present_rows(
+    pool: &sqlx::PgPool,
+    table_name: &str,
+    kline_collection: &KlineCollection,
+    indicator: &Indicator,
+) -> Vec<sqlx::postgres::PgRow> {
+    // Query the database to retrieve the indicator columns
+    sqlx::query(&format!(
+        r#"
+        SELECT {}
+        FROM {}
+        WHERE open_time BETWEEN {} AND {}
+        ORDER BY open_time ASC
+        "#,
+        indicator.column_names().join(", "),
+        table_name,
+        kline_collection.get_first_open_time().timestamp_millis(),
+        kline_collection.get_last_open_time().timestamp_millis()
+    ))
+    .fetch_all(pool)
+    .await
+    .unwrap()
+}
 
 // Retrieve from the database the klines indicators for the given symbol, interval and limit
 // if the klines indicators are not present in the database, they are computed and stored
@@ -31,58 +57,84 @@ pub async fn retrieve_indicator(
 
     // Query the database to retrieve the open_time of rows that are missing the indicator columns
     // and between the first and last open time
-    let first_open_time = kline_collection.get_first_open_time();
-    let last_open_time = kline_collection.get_last_open_time();
-    let result = sqlx::query(&format!(
-        r#"
-        SELECT open_time
-        FROM {}
-        WHERE ({} IS NULL)
-        AND open_time BETWEEN {} AND {}
-        ORDER BY open_time ASC
-        "#,
-        table_name,
-        indicator.column_names().join(" IS NULL OR "),
-        first_open_time.timestamp_millis(),
-        last_open_time.timestamp_millis()
-    ))
-    .fetch_all(&pool)
-    .await
-    .unwrap();
+    // let first_open_time = kline_collection.get_first_open_time();
+    // let last_open_time = kline_collection.get_last_open_time();
+    // let result = sqlx::query(&format!(
+    //     r#"
+    //     SELECT open_time
+    //     FROM {}
+    //     WHERE ({} IS NULL)
+    //     AND open_time BETWEEN {} AND {}
+    //     ORDER BY open_time ASC
+    //     "#,
+    //     table_name,
+    //     indicator.column_names().join(" IS NULL OR "),
+    //     first_open_time.timestamp_millis(),
+    //     last_open_time.timestamp_millis()
+    // ))
+    // .fetch_all(&pool)
+    // .await
+    // .unwrap();
 
-    // println!("First open time: {:?}", first_open_time);
-    // println!("Last open time: {:?}", last_open_time);
+    // // println!("First open time: {:?}", first_open_time);
+    // // println!("Last open time: {:?}", last_open_time);
 
-    let missing_rows = result.len();
+    // let missing_rows = result.len();
 
-    println!("Missing rows: {}", missing_rows); //, result);
+    // println!("Missing rows: {}", missing_rows); //, result);
+
+    // Query the database to retrieve the indicator columns
+    let rows = query_present_rows(&pool, &table_name, kline_collection, indicator).await;
+    println!("Rows: {}, {}", rows.len(), kline_collection.get_length());
+
+    if rows.len() as i32 != kline_collection.get_length() {
+        println!("Error: missing rows in the indicator columns");
+        return Err(sqlx::Error::RowNotFound);
+    }
+
+    indicator.store_rows(&rows);
+
+    let missing_rows: Vec<i32> = rows
+        .iter()
+        .enumerate()
+        .filter_map(|(i, row)| {
+            if indicator_columns
+                .iter()
+                .all(|column| row.get::<Option<f64>, _>(column.as_str()).is_none())
+            {
+                Some(i as i32)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    println!("Missing rows length: {}", missing_rows.len());
+
+    println!("Indicator: {:?}", indicator);
 
     // Compute the indicator columns for the missing rows
-    if missing_rows > 0 {
-        compute::compute_indicator(&pool, indicator, kline_collection)
+    if missing_rows.len() > 0 {
+        println!("Computing indicator columns...");
+        compute::compute_indicator(indicator, kline_collection, &missing_rows)
             .await
             .unwrap();
     }
 
-    // Query the database to retrieve the indicator columns
-    let result = sqlx::query(&format!(
-        r#"
-        SELECT {}
-        FROM {}
-        WHERE open_time BETWEEN {} AND {}
-        ORDER BY open_time ASC
-        "#,
-        indicator.column_names().join(", "),
-        table_name,
-        first_open_time.timestamp_millis(),
-        last_open_time.timestamp_millis()
-    ))
-    .fetch_all(&pool)
-    .await
-    .unwrap();
+    println!("Indicator: {:?}", indicator);
 
-    // Store the indicator columns in the kline collection
-    indicator.store_rows(&result);
+    // // Query the database to retrieve the indicator columns
+    // let rows = query_present_rows(&pool, &table_name, kline_collection, indicator).await;
+
+    // if rows.len() as i32 != kline_collection.get_length() {
+    //     println!("Error: missing rows in the indicator columns");
+    //     return Err(sqlx::Error::RowNotFound);
+    // }
+
+    // println!("Indicator: {:?}", indicator);
+
+    // // Store the indicator columns in the kline collection
+    // indicator.store_rows(&rows);
 
     Ok(())
 }

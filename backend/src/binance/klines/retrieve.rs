@@ -59,8 +59,39 @@ pub async fn retrieve_klines(
     //     table_empty = utils::check_table_empty(pool, &table_name).await;
     // }
 
+    let skip_fetch = match additional_klines {
+        Some(additional_klines) => {
+            // Query the number of klines before the last open time
+            let result = sqlx::query(&format!(
+                r#"
+                SELECT COUNT(*)
+                FROM {}
+                WHERE open_time < {}
+                "#,
+                utils::get_table_name(&klines_collection.symbol, &klines_collection.interval),
+                klines_collection.get_last_open_time().timestamp_millis()
+            ))
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+
+            let klines_before_last_open_time = result.get::<i64, _>(0);
+
+            println!(
+                "Klines before the last open time: {}",
+                klines_before_last_open_time
+            );
+
+            klines_before_last_open_time
+                >= klines_collection.get_length() as i64 + additional_klines as i64
+        }
+        None => false,
+    };
+
     // If the table does not exist or is empty, fetch the klines from the Binance API
-    if !table_exists || table_length == 0 || table_length < limit || force_fetch {
+    if skip_fetch {
+        println!("Skipping fetch");
+    } else if !table_exists || table_length == 0 || table_length < limit || force_fetch {
         // Acquire the klines from the Binance API
         acquire::acquire_klines(
             &pool,
