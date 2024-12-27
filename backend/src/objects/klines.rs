@@ -22,6 +22,25 @@ pub struct Kline {
     pub taker_buy_quote_asset_volume: f64,
 }
 
+impl Kline {
+    pub fn display(&self) {
+        println!(
+            "{{Open time: {:?}, Open: {}, High: {}, Low: {}, Close: {}, Volume: {}, Close time: {:?}, Quote asset volume: {}, Number of trades: {}, Taker buy base asset volume: {}, Taker buy quote asset volume: {}}}",
+            self.open_time,
+            self.open,
+            self.high,
+            self.low,
+            self.close,
+            self.volume,
+            self.close_time,
+            self.quote_asset_volume,
+            self.number_of_trades,
+            self.taker_buy_base_asset_volume,
+            self.taker_buy_quote_asset_volume
+        );
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KlineCollection {
     pub symbol: String,

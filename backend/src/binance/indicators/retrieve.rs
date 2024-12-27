@@ -94,34 +94,28 @@ pub async fn retrieve_indicator(
 
     indicator.store_rows(&rows);
 
-    let missing_rows: Vec<i32> = rows
+    let missing_rows_count = rows
         .iter()
-        .enumerate()
-        .filter_map(|(i, row)| {
-            if indicator_columns
+        .filter(|row| {
+            indicator_columns
                 .iter()
                 .all(|column| row.get::<Option<f64>, _>(column.as_str()).is_none())
-            {
-                Some(i as i32)
-            } else {
-                None
-            }
         })
-        .collect();
+        .count();
 
-    println!("Missing rows length: {}", missing_rows.len());
+    println!("Missing rows count: {}", missing_rows_count);
 
-    println!("Indicator: {:?}", indicator);
+    // println!("Indicator: {:?}", indicator);
 
     // Compute the indicator columns for the missing rows
-    if missing_rows.len() > 0 {
+    if missing_rows_count > 0 {
         println!("Computing indicator columns...");
-        compute::compute_indicator(indicator, kline_collection, &missing_rows)
+        compute::compute_indicator(indicator, kline_collection)
             .await
             .unwrap();
     }
 
-    println!("Indicator: {:?}", indicator);
+    // println!("Indicator: {:?}", indicator);
 
     // // Query the database to retrieve the indicator columns
     // let rows = query_present_rows(&pool, &table_name, kline_collection, indicator).await;

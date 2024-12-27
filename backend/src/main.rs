@@ -25,6 +25,7 @@ async fn main() {
 
     let args: Vec<String> = env::args().collect();
     let minutes = args[1].parse::<i64>().unwrap();
+    let force_fetch = args[2].parse::<bool>().unwrap();
 
     // // Spawn the listener task
     // tokio::spawn(async move {
@@ -42,7 +43,7 @@ async fn main() {
         &CryptoInterval::Int1m,
         chrono::Duration::minutes(minutes).num_minutes(),
         0.75,
-        false,
+        force_fetch,
     )
     .await
     .is_err()
@@ -50,8 +51,6 @@ async fn main() {
         println!("Error retrieving klines");
         return;
     }
-
-    ////// pas recalculer les indicateurs si on a déjà les données sur une periode etc etc
 
     klines_collection.display();
     // klines_collection.check_integrity();
@@ -110,13 +109,13 @@ async fn main() {
     // klines_collection.check_integrity();
 
     let mut indicator_2 = Indicator::StochasticOscillator(StochasticOscillator {
-        k_period: 14,
+        k_period: 5,
         d_period: 3,
         k_values: Vec::<Option<f64>>::new(),
         d_values: Vec::<Option<f64>>::new(),
     });
     // let mut indicator_2 = Indicator::MovingAverage(MovingAverage {
-    //     period: 4,
+    //     period: 7,
     //     values: Vec::<Option<f64>>::new(),
     // });
 
@@ -138,6 +137,8 @@ async fn main() {
         println!("Error retrieving indicator");
         return;
     }
+
+    println!("Indicator: {:?}", indicator_2);
 
     // println!("Final Indicator: {:?}", indicator_2);
 

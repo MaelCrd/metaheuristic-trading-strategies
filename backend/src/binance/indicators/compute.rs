@@ -5,7 +5,6 @@ use crate::objects::{indicators::Indicator, klines::KlineCollection};
 pub async fn compute_indicator(
     indicator: &mut Indicator,
     kline_collection: &KlineCollection,
-    missing_rows: &Vec<i32>,
 ) -> Result<(), sqlx::Error> {
     // We assume klines are already present in the database
     let table_name = utils::get_table_name_collection(&kline_collection);
@@ -14,7 +13,7 @@ pub async fn compute_indicator(
     let pool = utils::connect_to_db().await;
 
     // Calculate indicator values
-    indicator.calculate(kline_collection, missing_rows);
+    indicator.calculate(kline_collection);
 
     //
     println!("Indicator values: {:?}", indicator);
