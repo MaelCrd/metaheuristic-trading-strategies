@@ -1,11 +1,10 @@
-#[cfg(test)]
 use crate::objects::{
     indicators::{IndicatorTrait, StochasticOscillator},
     klines::KlineCollection,
 };
 
 #[test]
-fn test_stochastic_oscillator_calculation() {
+pub fn test_stochastic_oscillator_calculation() {
     // Create a new kline collection
     let mut kline_collection = KlineCollection::new();
 

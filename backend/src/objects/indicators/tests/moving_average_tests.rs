@@ -1,11 +1,10 @@
-#[cfg(test)]
 use crate::objects::{
     indicators::{IndicatorTrait, MovingAverage},
     klines::KlineCollection,
 };
 
 #[test]
-fn test_moving_average_calculation() {
+pub fn test_moving_average_calculation() {
     // Create a new kline collection
     let mut kline_collection = KlineCollection::new();
 
