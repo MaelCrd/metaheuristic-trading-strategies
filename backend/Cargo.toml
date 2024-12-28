@@ -21,3 +21,5 @@ chrono = { version = "0.4", features = ["serde"] }
 binance_spot_connector_rust = { git = "https://github.com/binance/binance-spot-connector-rust.git", features = [
     "enable-hyper",
 ] }
+rand = "0.8.5"
+rayon = "1.10"

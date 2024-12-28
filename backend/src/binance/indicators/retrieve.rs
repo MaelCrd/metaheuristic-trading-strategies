@@ -34,8 +34,8 @@ async fn query_present_rows(
 // Retrieve from the database the klines indicators for the given symbol, interval and limit
 // if the klines indicators are not present in the database, they are computed and stored
 pub async fn retrieve_indicator(
-    kline_collection: &KlineCollection,
     indicator: &mut Indicator,
+    kline_collection: &KlineCollection,
 ) -> Result<(), sqlx::Error> {
     // Retrieve the klines indicators from the database
     // We assume klines are already present in the database

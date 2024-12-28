@@ -1,5 +1,3 @@
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
