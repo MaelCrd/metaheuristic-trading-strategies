@@ -37,6 +37,10 @@ pub fn mh_nsga_ii() {
             _ => panic!("Expected float"),
         };
 
+        for _ in 0..400000 {
+            let _ = 1 + 1;
+        }
+
         vec![
             if b { x.powi(4) } else { x.powi(2) } + y / 10.0, // First objective
             (y - 2.0).powi(2),                                // Second objective

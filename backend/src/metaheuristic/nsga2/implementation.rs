@@ -327,9 +327,14 @@ impl NSGAII {
         let mut population = self.initialize_population();
 
         // Evaluate initial population
-        for solution in &mut population {
+        // for solution in &mut population {
+        //     solution.objectives = evaluate(&solution.variables);
+        // }
+
+        // Parallel evaluation of initial population
+        population.par_iter_mut().for_each(|solution| {
             solution.objectives = evaluate(&solution.variables);
-        }
+        });
 
         for _ in 0..generations {
             // Create offspring population
@@ -348,10 +353,6 @@ impl NSGAII {
                 self.mutate(&mut child1);
                 self.mutate(&mut child2);
 
-                // Evaluation
-                child1.objectives = evaluate(&child1.variables);
-                child2.objectives = evaluate(&child2.variables);
-
                 offspring.push(child1);
                 if offspring.len() < self.population_size {
                     offspring.push(child2);
@@ -360,6 +361,11 @@ impl NSGAII {
 
             // Generate offspring in parallel
             // let offspring = self.generate_offspring_parallel(&population, evaluate.clone().into());
+
+            // Parallel evaluation of offspring
+            offspring.par_iter_mut().for_each(|child| {
+                child.objectives = evaluate(&child.variables);
+            });
 
             // Combine parent and offspring populations
             population.extend(offspring);
