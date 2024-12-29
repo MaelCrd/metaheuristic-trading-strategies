@@ -9,7 +9,7 @@ pub fn mh_nsga_ii() {
         VariableDefinition::Boolean,          // Boolean variable
         VariableDefinition::Float(0.0, 5.0),  // Another float variable
     ];
-    let num_objectives = 2;
+    let num_objectives = 3;
     let mutation_rate = 0.1;
     let crossover_rate = 0.9;
 
@@ -37,10 +37,6 @@ pub fn mh_nsga_ii() {
             _ => panic!("Expected float"),
         };
 
-        for _ in 0..400000 {
-            let _ = 1 + 1;
-        }
-
         vec![
             if b { x.powi(4) } else { x.powi(2) } + y / 10.0, // First objective
             (y - 2.0).powi(2),                                // Second objective
@@ -58,8 +54,8 @@ pub fn mh_nsga_ii() {
     // Print results
     println!("Elapsed time: {:?}", elapsed);
 
-    // println!("Final population:");
-    // for individual in final_population {
-    //     println!("{:?}", individual.show_short());
-    // }
+    println!("Final population ({}):", final_population.len());
+    for individual in final_population {
+        println!("{}", individual.show_short());
+    }
 }

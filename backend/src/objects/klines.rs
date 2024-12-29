@@ -105,6 +105,16 @@ impl KlineCollection {
             .get((validation_len + training_len + past_len - 1 - index) as usize)
     }
 
+    // Get iterator for the klines in training + validation's close prices
+    pub fn get_close_prices_iter(&self) -> Box<impl Iterator<Item = f64> + '_> {
+        Box::new(
+            self.training
+                .iter()
+                .map(|kline| kline.close)
+                .chain(self.validation.iter().map(|kline| kline.close)),
+        )
+    }
+
     pub fn get_length(&self) -> i32 {
         self.training.len() as i32 + self.validation.len() as i32
     }

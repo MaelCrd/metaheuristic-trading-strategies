@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 
-use crate::objects::klines::KlineCollection;
+use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub enum Indicator {
     MovingAverage(MovingAverage),
     ExponentialMovingAverage(ExponentialMovingAverage),
@@ -46,33 +46,42 @@ pub trait IndicatorTrait {
 
     // Get the values of the indicator
     fn get_values(&self) -> Vec<&Vec<Option<f64>>>;
+
+    // Get the criteria of the indicator
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion>;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MovingAverage {
     // Parameters
     pub period: i32,
     // Values
     pub values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ExponentialMovingAverage {
     // Parameters
     pub period: i32,
     // Values
     pub values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct RelativeStrengthIndex {
     // Parameters
     pub period: i32,
     // Values
     pub values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct MovingAverageConvergenceDivergence {
     // Parameters
     pub short_period: i32,
@@ -82,9 +91,11 @@ pub struct MovingAverageConvergenceDivergence {
     pub macd_values: Vec<Option<f64>>,
     pub signal_values: Vec<Option<f64>>,
     pub histogram_values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct BollingerBands {
     // Parameters
     pub period: i32,
@@ -93,17 +104,21 @@ pub struct BollingerBands {
     pub upper_band_values: Vec<Option<f64>>,
     pub middle_band_values: Vec<Option<f64>>,
     pub lower_band_values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct FibonacciRetracement {
     // Parameters
     pub period: i32,
     // Values
     pub values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct StochasticOscillator {
     // Parameters
     pub k_period: i32,
@@ -111,17 +126,21 @@ pub struct StochasticOscillator {
     // Values
     pub k_values: Vec<Option<f64>>,
     pub d_values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct OnBalanceVolume {
     // Parameters
     pub period: i32,
     // Values
     pub values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct IchimokuCloud {
     // Parameters
     pub conversion_period: i32,
@@ -133,4 +152,6 @@ pub struct IchimokuCloud {
     pub lagging_span_values: Vec<Option<f64>>,
     pub leading_span_a_values: Vec<Option<f64>>,
     pub leading_span_b_values: Vec<Option<f64>>,
+    // Criteria
+    pub criteria: Vec<Criterion>,
 }

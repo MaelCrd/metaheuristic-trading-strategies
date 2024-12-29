@@ -1,8 +1,23 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IndicatorTrait, StochasticOscillator};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{IndicatorTrait, StochasticOscillator},
+    klines::KlineCollection,
+};
+
+impl StochasticOscillator {
+    pub fn new(k_period: i32, d_period: i32) -> StochasticOscillator {
+        StochasticOscillator {
+            k_period,
+            d_period,
+            k_values: Vec::new(),
+            d_values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for StochasticOscillator {
     fn column_names(&self) -> Vec<String> {
@@ -94,5 +109,9 @@ impl IndicatorTrait for StochasticOscillator {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.k_values, &self.d_values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

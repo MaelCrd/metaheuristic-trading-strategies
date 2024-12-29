@@ -1,8 +1,21 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{FibonacciRetracement, IndicatorTrait};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{FibonacciRetracement, IndicatorTrait},
+    klines::KlineCollection,
+};
+
+impl FibonacciRetracement {
+    pub fn new(period: i32) -> FibonacciRetracement {
+        FibonacciRetracement {
+            period,
+            values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for FibonacciRetracement {
     fn column_names(&self) -> Vec<String> {
@@ -36,5 +49,9 @@ impl IndicatorTrait for FibonacciRetracement {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

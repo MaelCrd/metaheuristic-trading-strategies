@@ -1,8 +1,29 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IndicatorTrait, MovingAverageConvergenceDivergence};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{IndicatorTrait, MovingAverageConvergenceDivergence},
+    klines::KlineCollection,
+};
+
+impl MovingAverageConvergenceDivergence {
+    pub fn new(
+        short_period: i32,
+        long_period: i32,
+        signal_period: i32,
+    ) -> MovingAverageConvergenceDivergence {
+        MovingAverageConvergenceDivergence {
+            short_period,
+            long_period,
+            signal_period,
+            macd_values: Vec::new(),
+            signal_values: Vec::new(),
+            histogram_values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for MovingAverageConvergenceDivergence {
     fn column_names(&self) -> Vec<String> {
@@ -62,5 +83,9 @@ impl IndicatorTrait for MovingAverageConvergenceDivergence {
             &self.signal_values,
             &self.histogram_values,
         ]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

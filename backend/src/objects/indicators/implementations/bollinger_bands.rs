@@ -1,8 +1,24 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{BollingerBands, IndicatorTrait};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{BollingerBands, IndicatorTrait},
+    klines::KlineCollection,
+};
+
+impl BollingerBands {
+    pub fn new(period: i32, deviation: f64) -> BollingerBands {
+        BollingerBands {
+            period,
+            deviation,
+            upper_band_values: Vec::new(),
+            middle_band_values: Vec::new(),
+            lower_band_values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for BollingerBands {
     fn column_names(&self) -> Vec<String> {
@@ -50,5 +66,9 @@ impl IndicatorTrait for BollingerBands {
             &self.middle_band_values,
             &self.lower_band_values,
         ]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

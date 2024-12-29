@@ -1,8 +1,21 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IndicatorTrait, MovingAverage};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::{CompareCriterion, Criterion, CriterionTrait, CrossCriterion},
+    indicators::{IndicatorTrait, MovingAverage},
+    klines::KlineCollection,
+};
+
+impl MovingAverage {
+    pub fn new(period: i32) -> MovingAverage {
+        MovingAverage {
+            period,
+            values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for MovingAverage {
     fn column_names(&self) -> Vec<String> {
@@ -55,5 +68,33 @@ impl IndicatorTrait for MovingAverage {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        // If vec is empty, calculate the criteria
+        if self.criteria.is_empty() {
+            // Calculate the criteria
+            let values_iter = self.values.iter().filter_map(|&x| x);
+
+            self.criteria.reserve(3);
+            self.criteria.push(Criterion::Compare(CompareCriterion::new(
+                klines_collection.get_close_prices_iter(),
+                Box::new(values_iter.clone()),
+            )));
+
+            //////// cross est dérivé de compare (false -> true = cross et l'inverse)
+
+            self.criteria.push(Criterion::Cross(CrossCriterion::new(
+                Box::new(values_iter.clone()),
+                klines_collection.get_close_prices_iter(),
+            )));
+
+            self.criteria.push(Criterion::Cross(CrossCriterion::new(
+                klines_collection.get_close_prices_iter(),
+                Box::new(values_iter.clone()),
+            )));
+        }
+
+        &self.criteria
     }
 }

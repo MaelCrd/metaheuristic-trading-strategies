@@ -6,7 +6,7 @@ mod types;
 use sqlx::postgres::PgRow;
 pub use types::*;
 
-use crate::objects::klines::KlineCollection;
+use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 impl IndicatorTrait for Indicator {
     fn column_names(&self) -> Vec<String> {
@@ -108,6 +108,26 @@ impl IndicatorTrait for Indicator {
             Indicator::StochasticOscillator(indicator) => indicator.get_values(),
             Indicator::OnBalanceVolume(indicator) => indicator.get_values(),
             Indicator::IchimokuCloud(indicator) => indicator.get_values(),
+        }
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::ExponentialMovingAverage(indicator) => {
+                indicator.get_criteria(klines_collection)
+            }
+            Indicator::RelativeStrengthIndex(indicator) => {
+                indicator.get_criteria(klines_collection)
+            }
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                indicator.get_criteria(klines_collection)
+            }
+            Indicator::BollingerBands(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::FibonacciRetracement(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::StochasticOscillator(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::OnBalanceVolume(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::IchimokuCloud(indicator) => indicator.get_criteria(klines_collection),
         }
     }
 }

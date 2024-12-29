@@ -8,7 +8,7 @@ use super::utils;
 use crate::{objects::intervals::CryptoInterval, utils::loading};
 
 const BINANCE_FUTURES_API_URL: &str = "https://fapi.binance.com";
-const KLINES_LIMIT: &str = "25";
+const KLINES_LIMIT: &str = "250";
 const REQUESTS_DELAY_MILLIS: u64 = 300;
 
 #[derive(PartialEq)]

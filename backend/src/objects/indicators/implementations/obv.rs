@@ -1,8 +1,21 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IndicatorTrait, OnBalanceVolume};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{IndicatorTrait, OnBalanceVolume},
+    klines::KlineCollection,
+};
+
+impl OnBalanceVolume {
+    pub fn new(period: i32) -> OnBalanceVolume {
+        OnBalanceVolume {
+            period,
+            values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for OnBalanceVolume {
     fn column_names(&self) -> Vec<String> {
@@ -36,5 +49,9 @@ impl IndicatorTrait for OnBalanceVolume {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

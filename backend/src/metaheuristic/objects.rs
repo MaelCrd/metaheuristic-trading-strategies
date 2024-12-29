@@ -49,7 +49,10 @@ impl Solution {
             .map(|o| o.to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        format!("Variables: [{}], Objectives: [{}]", vars, objs)
+        format!(
+            "Variables: [{}], Objectives: [{}], Rank: {}",
+            vars, objs, self.rank
+        )
     }
 }
 

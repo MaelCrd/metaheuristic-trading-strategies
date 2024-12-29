@@ -1,8 +1,21 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{ExponentialMovingAverage, IndicatorTrait};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{ExponentialMovingAverage, IndicatorTrait},
+    klines::KlineCollection,
+};
+
+impl ExponentialMovingAverage {
+    pub fn new(period: i32) -> ExponentialMovingAverage {
+        ExponentialMovingAverage {
+            period,
+            values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for ExponentialMovingAverage {
     fn column_names(&self) -> Vec<String> {
@@ -36,5 +49,9 @@ impl IndicatorTrait for ExponentialMovingAverage {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

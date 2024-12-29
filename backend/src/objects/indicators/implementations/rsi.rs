@@ -1,8 +1,21 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IndicatorTrait, RelativeStrengthIndex};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{IndicatorTrait, RelativeStrengthIndex},
+    klines::KlineCollection,
+};
+
+impl RelativeStrengthIndex {
+    pub fn new(period: i32) -> RelativeStrengthIndex {
+        RelativeStrengthIndex {
+            period,
+            values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for RelativeStrengthIndex {
     fn column_names(&self) -> Vec<String> {
@@ -36,5 +49,9 @@ impl IndicatorTrait for RelativeStrengthIndex {
 
     fn get_values(&self) -> Vec<&Vec<Option<f64>>> {
         vec![&self.values]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }

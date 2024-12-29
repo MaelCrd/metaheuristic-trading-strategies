@@ -1,8 +1,27 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use super::super::{IchimokuCloud, IndicatorTrait};
-use crate::objects::klines::KlineCollection;
+use crate::objects::{
+    criteria::Criterion,
+    indicators::{IchimokuCloud, IndicatorTrait},
+    klines::KlineCollection,
+};
+
+impl IchimokuCloud {
+    pub fn new(conversion_period: i32, base_period: i32, lagging_span: i32) -> IchimokuCloud {
+        IchimokuCloud {
+            conversion_period,
+            base_period,
+            lagging_span,
+            conversion_line_values: Vec::new(),
+            base_line_values: Vec::new(),
+            lagging_span_values: Vec::new(),
+            leading_span_a_values: Vec::new(),
+            leading_span_b_values: Vec::new(),
+            criteria: Vec::new(),
+        }
+    }
+}
 
 impl IndicatorTrait for IchimokuCloud {
     fn column_names(&self) -> Vec<String> {
@@ -81,5 +100,9 @@ impl IndicatorTrait for IchimokuCloud {
             &self.leading_span_a_values,
             &self.leading_span_b_values,
         ]
+    }
+
+    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+        &self.criteria
     }
 }
