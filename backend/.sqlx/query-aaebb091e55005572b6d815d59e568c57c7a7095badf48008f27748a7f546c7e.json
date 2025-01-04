@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO crypto_list_x_crypto_symbol (crypto_list_id, crypto_symbol_id)\n            VALUES ($1, $2)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aaebb091e55005572b6d815d59e568c57c7a7095badf48008f27748a7f546c7e"
+}

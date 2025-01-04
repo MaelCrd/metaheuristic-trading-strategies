@@ -172,3 +172,166 @@ impl KlineCollection {
         }
     }
 }
+
+// --- Tests --- //
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{TimeZone, Utc};
+
+    fn create_sample_kline(time: DateTime<Utc>) -> Kline {
+        Kline {
+            open_time: time,
+            open: 100.0,
+            high: 110.0,
+            low: 90.0,
+            close: 105.0,
+            volume: 1000.0,
+            close_time: time + chrono::Duration::minutes(1),
+            quote_asset_volume: 105000.0,
+            number_of_trades: 100,
+            taker_buy_base_asset_volume: 600.0,
+            taker_buy_quote_asset_volume: 63000.0,
+        }
+    }
+
+    fn create_test_collection() -> KlineCollection {
+        let mut collection = KlineCollection::new();
+        collection.symbol = String::from("BTCUSDT");
+        collection.interval = intervals::CryptoInterval::Int1m;
+        collection.training_percentage = 0.7;
+
+        // Add training data
+        let base_time = Utc.timestamp_opt(1609459200, 0).unwrap(); // 2021-01-01 00:00:00 UTC
+        for i in 0..3 {
+            let time = base_time + chrono::Duration::minutes(i);
+            collection.training.push(create_sample_kline(time));
+        }
+
+        // Add validation data
+        for i in 3..5 {
+            let time = base_time + chrono::Duration::minutes(i);
+            collection.validation.push(create_sample_kline(time));
+        }
+
+        // Add past data
+        for i in -2..0 {
+            let time = base_time + chrono::Duration::minutes(i);
+            collection.past.push(create_sample_kline(time));
+        }
+
+        collection
+    }
+
+    #[test]
+    fn test_kline_creation() {
+        let time = Utc::now();
+        let kline = create_sample_kline(time);
+
+        assert_eq!(kline.open, 100.0);
+        assert_eq!(kline.high, 110.0);
+        assert_eq!(kline.low, 90.0);
+        assert_eq!(kline.close, 105.0);
+        assert_eq!(kline.volume, 1000.0);
+    }
+
+    #[test]
+    fn test_collection_new() {
+        let collection = KlineCollection::new();
+        assert_eq!(collection.symbol, "");
+        assert_eq!(collection.training_percentage, 1.0);
+        assert!(collection.training.is_empty());
+        assert!(collection.validation.is_empty());
+        assert!(collection.past.is_empty());
+    }
+
+    #[test]
+    fn test_get_normal_index() {
+        let collection = create_test_collection();
+
+        // Test training data access
+        let first = collection.get(0).unwrap();
+        assert_eq!(first.open, 100.0);
+
+        // Test validation data access
+        let fourth = collection.get(3).unwrap();
+        assert_eq!(fourth.open, 100.0);
+
+        // Test past data access
+        let past = collection.get(5).unwrap();
+        assert_eq!(past.open, 100.0);
+
+        // Test out of bounds
+        assert!(collection.get(-1).is_none());
+        assert!(collection.get(7).is_none());
+    }
+
+    #[test]
+    fn test_get_reverse_index() {
+        let collection = create_test_collection();
+
+        // Test validation data access (reverse)
+        let last = collection.get_rev(0).unwrap();
+        assert_eq!(last.open, 100.0);
+
+        // Test training data access (reverse)
+        let training = collection.get_rev(3).unwrap();
+        assert_eq!(training.open, 100.0);
+
+        // Test past data access (reverse)
+        let past = collection.get_rev(5).unwrap();
+        assert_eq!(past.open, 100.0);
+
+        // Test out of bounds
+        assert!(collection.get_rev(-1).is_none());
+        assert!(collection.get_rev(7).is_none());
+    }
+
+    #[test]
+    fn test_get_close_prices_iter() {
+        let collection = create_test_collection();
+        let close_prices: Vec<f64> = collection.get_close_prices_iter().collect();
+
+        assert_eq!(close_prices.len(), 5); // 3 training + 2 validation
+        assert!(close_prices.iter().all(|&price| price == 105.0));
+    }
+
+    #[test]
+    fn test_get_length() {
+        let collection = create_test_collection();
+        assert_eq!(collection.get_length(), 5); // 3 training + 2 validation
+    }
+
+    #[test]
+    fn test_get_limit_minutes() {
+        let collection = create_test_collection();
+        assert_eq!(collection.get_limit_minutes(), 5); // 5 total klines * 1 minute interval
+    }
+
+    #[test]
+    fn test_get_first_last_times() {
+        let collection = create_test_collection();
+        let base_time = Utc.timestamp_opt(1609459200, 0).unwrap();
+
+        println!(
+            "{:?} {:?} {:?}",
+            collection.past, collection.training, collection.validation
+        );
+
+        assert_eq!(collection.get_first_open_time(), base_time);
+        assert_eq!(
+            collection.get_last_open_time(),
+            base_time + chrono::Duration::minutes(4)
+        );
+        assert_eq!(
+            collection.get_first_past_open_time(),
+            base_time - chrono::Duration::minutes(2)
+        );
+    }
+
+    #[test]
+    fn test_integrity() {
+        let collection = create_test_collection();
+        collection.check_integrity();
+    }
+}

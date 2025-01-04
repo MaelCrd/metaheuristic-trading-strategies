@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM mh_object\n        WHERE hidden = TRUE\n        AND id NOT IN (\n            SELECT DISTINCT mh_object_id\n            FROM task\n        )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "e5ed6abc59a731ac4be8928ac6463bba769757303422ad5919953aaa92026bf8"
+}

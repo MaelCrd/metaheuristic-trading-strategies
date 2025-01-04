@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE crypto_symbol\n            SET volume = $1, available = $2, last_updated = $3\n            WHERE symbol = $4\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Bool",
+        "Timestamp",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0add9bab0257ef3d727c952bf0d347952fc6f777b2c57a080c2bd30e2331a7d8"
+}

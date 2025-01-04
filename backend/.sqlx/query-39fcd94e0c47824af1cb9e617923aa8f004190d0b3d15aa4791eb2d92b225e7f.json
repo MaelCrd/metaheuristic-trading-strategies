@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE task\n        SET state = 'CANCELLING'\n        WHERE id = $1 AND (state = 'CREATED' OR state = 'PENDING' OR state = 'RUNNING')\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "39fcd94e0c47824af1cb9e617923aa8f004190d0b3d15aa4791eb2d92b225e7f"
+}

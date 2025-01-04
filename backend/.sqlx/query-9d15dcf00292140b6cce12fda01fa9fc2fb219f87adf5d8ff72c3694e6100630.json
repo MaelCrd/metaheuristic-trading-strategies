@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO crypto_list (name, interval, type)\n        VALUES ($1, $2, $3)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        {
+          "Custom": {
+            "name": "crypto_interval",
+            "kind": {
+              "Enum": [
+                "Int1m",
+                "Int5m",
+                "Int15m",
+                "Int30m",
+                "Int1h",
+                "Int2h",
+                "Int4h",
+                "Int6h",
+                "Int8h",
+                "Int12h",
+                "Int1d",
+                "Int3d",
+                "Int1w",
+                "Int1M"
+              ]
+            }
+          }
+        },
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9d15dcf00292140b6cce12fda01fa9fc2fb219f87adf5d8ff72c3694e6100630"
+}

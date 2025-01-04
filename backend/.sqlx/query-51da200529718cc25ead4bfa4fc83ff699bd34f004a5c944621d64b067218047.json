@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                DELETE FROM crypto_list_x_crypto_symbol\n                WHERE crypto_list_id = $1\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "51da200529718cc25ead4bfa4fc83ff699bd34f004a5c944621d64b067218047"
+}

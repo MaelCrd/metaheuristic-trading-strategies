@@ -37,7 +37,7 @@ async fn main() {
     //
 
     let minutes = 10 * 5;
-    let force_fetch = true;
+    let force_fetch = false;
 
     let mut klines_collection: KlineCollection = KlineCollection::new();
     if binance::klines::retrieve::retrieve_klines_simple(
