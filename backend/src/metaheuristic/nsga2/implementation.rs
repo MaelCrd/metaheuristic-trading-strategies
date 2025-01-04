@@ -6,7 +6,7 @@ use super::super::objects::{MetaheuristicTrait, Solution, Variable, VariableDefi
 
 // Parallelize the NSGA-II algorithm using Rayon
 use rayon::prelude::*;
-use std::sync::Arc;
+// use std::sync::Arc;
 
 /// The main NSGA-II algorithm implementation
 pub struct NSGAII {
@@ -254,8 +254,8 @@ impl NSGAII {
                         if let Variable::Float(y) = solution.variables[i] {
                             let delta1 = (y - min) / (max - min);
                             let delta2 = (max - y) / (max - min);
-                            let mut rnd = rng.gen::<f64>();
-                            let mut deltaq;
+                            let rnd = rng.gen::<f64>();
+                            let deltaq;
 
                             if rnd <= 0.5 {
                                 let xy = 1.0 - delta1;
@@ -298,26 +298,26 @@ impl NSGAII {
         one_is_better
     }
 
-    /// Parallelized offspring generation
-    fn generate_offspring_parallel(
-        &self,
-        population: &[Solution],
-        evaluate: Arc<impl Fn(&[Variable]) -> Vec<f64> + Sync + Send>,
-    ) -> Vec<Solution> {
-        (0..self.population_size)
-            .into_par_iter()
-            .map(|_| {
-                let parent1_idx = self.tournament_selection(population);
-                let parent2_idx = self.tournament_selection(population);
-                let (mut child1, mut child2) =
-                    self.crossover(&population[parent1_idx], &population[parent2_idx]);
+    // /// Parallelized offspring generation
+    // fn generate_offspring_parallel(
+    //     &self,
+    //     population: &[Solution],
+    //     evaluate: Arc<impl Fn(&[Variable]) -> Vec<f64> + Sync + Send>,
+    // ) -> Vec<Solution> {
+    //     (0..self.population_size)
+    //         .into_par_iter()
+    //         .map(|_| {
+    //             let parent1_idx = self.tournament_selection(population);
+    //             let parent2_idx = self.tournament_selection(population);
+    //             let (mut child1, mut child2) =
+    //                 self.crossover(&population[parent1_idx], &population[parent2_idx]);
 
-                self.mutate(&mut child1);
-                child1.objectives = evaluate(&child1.variables);
-                child1
-            })
-            .collect()
-    }
+    //             self.mutate(&mut child1);
+    //             child1.objectives = evaluate(&child1.variables);
+    //             child1
+    //         })
+    //         .collect()
+    // }
 
     /// Run the NSGA-II algorithm
     pub fn run<F>(&self, generations: usize, evaluate: F) -> Vec<Solution>

@@ -113,23 +113,41 @@ impl IndicatorTrait for Indicator {
         }
     }
 
-    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+    fn calculate_criteria(&mut self, kline_collection: &KlineCollection) {
         match self {
-            Indicator::MovingAverage(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::MovingAverage(indicator) => indicator.calculate_criteria(kline_collection),
             Indicator::ExponentialMovingAverage(indicator) => {
-                indicator.get_criteria(klines_collection)
+                indicator.calculate_criteria(kline_collection)
             }
             Indicator::RelativeStrengthIndex(indicator) => {
-                indicator.get_criteria(klines_collection)
+                indicator.calculate_criteria(kline_collection)
             }
             Indicator::MovingAverageConvergenceDivergence(indicator) => {
-                indicator.get_criteria(klines_collection)
+                indicator.calculate_criteria(kline_collection)
             }
-            Indicator::BollingerBands(indicator) => indicator.get_criteria(klines_collection),
-            Indicator::FibonacciRetracement(indicator) => indicator.get_criteria(klines_collection),
-            Indicator::StochasticOscillator(indicator) => indicator.get_criteria(klines_collection),
-            Indicator::OnBalanceVolume(indicator) => indicator.get_criteria(klines_collection),
-            Indicator::IchimokuCloud(indicator) => indicator.get_criteria(klines_collection),
+            Indicator::BollingerBands(indicator) => indicator.calculate_criteria(kline_collection),
+            Indicator::FibonacciRetracement(indicator) => {
+                indicator.calculate_criteria(kline_collection)
+            }
+            Indicator::StochasticOscillator(indicator) => {
+                indicator.calculate_criteria(kline_collection)
+            }
+            Indicator::OnBalanceVolume(indicator) => indicator.calculate_criteria(kline_collection),
+            Indicator::IchimokuCloud(indicator) => indicator.calculate_criteria(kline_collection),
+        }
+    }
+
+    fn get_criteria(&self) -> &Vec<Criterion> {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.get_criteria(),
+            Indicator::ExponentialMovingAverage(indicator) => indicator.get_criteria(),
+            Indicator::RelativeStrengthIndex(indicator) => indicator.get_criteria(),
+            Indicator::MovingAverageConvergenceDivergence(indicator) => indicator.get_criteria(),
+            Indicator::BollingerBands(indicator) => indicator.get_criteria(),
+            Indicator::FibonacciRetracement(indicator) => indicator.get_criteria(),
+            Indicator::StochasticOscillator(indicator) => indicator.get_criteria(),
+            Indicator::OnBalanceVolume(indicator) => indicator.get_criteria(),
+            Indicator::IchimokuCloud(indicator) => indicator.get_criteria(),
         }
     }
 }

@@ -14,9 +14,10 @@ use dotenv::dotenv;
 
 // mod listener; // Add this line to import the listener module
 
-// use backend::interface::rocket;
+use backend::interface::rocket;
 // use backend::utils::loading;
 use backend::binance;
+use backend::manager;
 use backend::metaheuristic::mh;
 
 #[tokio::main]
@@ -27,6 +28,20 @@ async fn main() {
     // let args: Vec<String> = env::args().collect();
     // let minutes = args[1].parse::<i64>().unwrap();
     // let force_fetch = args[2].parse::<bool>().unwrap();
+
+    //
+
+    let task_manager = manager::TaskManager::new().await;
+    tokio::spawn(async move {
+        task_manager.start().await.unwrap();
+    });
+
+    // Run the Rocket application
+    rocket::rocket().launch().await.unwrap();
+
+    return;
+
+    //
 
     //
 
@@ -93,7 +108,8 @@ async fn main() {
 
     println!("Indicator: {:?}", indicator_2);
 
-    let criteria = indicator_2.get_criteria(&klines_collection);
+    indicator_2.calculate_criteria(&klines_collection);
+    let criteria = indicator_2.get_criteria();
     println!("Criteria: {:?}", criteria);
     for c in criteria {
         println!("Criteria: {:?}", c);

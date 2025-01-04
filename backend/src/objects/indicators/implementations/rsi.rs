@@ -43,7 +43,7 @@ impl IndicatorTrait for RelativeStrengthIndex {
             .collect()
     }
 
-    fn calculate(&mut self, kline_collection: &KlineCollection) {
+    fn calculate(&mut self, _kline_collection: &KlineCollection) {
         return;
     }
 
@@ -51,7 +51,9 @@ impl IndicatorTrait for RelativeStrengthIndex {
         vec![&self.values]
     }
 
-    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+    fn calculate_criteria(&mut self, _kline_collection: &KlineCollection) {}
+
+    fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
     }
 }

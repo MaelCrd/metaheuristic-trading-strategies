@@ -38,14 +38,15 @@ pub fn mh_nsga_ii() {
         };
 
         vec![
-            if b { x.powi(4) } else { x.powi(2) } + y / 10.0, // First objective
-            (y - 2.0).powi(2),                                // Second objective
-            (x + y) / (if b { 1.0 } else { 5.0 }),            // Third objective
+            x.powi(2), // First objective
+            (y - 2.0), // Second objective
+            (x + y),   // Third objective
         ]
     };
 
     // Now time
     let start = std::time::Instant::now();
+    println!("Starting optimization...");
 
     // Run optimization
     let final_population = nsga2.run(200, evaluate);

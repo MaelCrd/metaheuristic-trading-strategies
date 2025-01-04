@@ -111,7 +111,9 @@ impl IndicatorTrait for StochasticOscillator {
         vec![&self.k_values, &self.d_values]
     }
 
-    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+    fn calculate_criteria(&mut self, _kline_collection: &KlineCollection) {}
+
+    fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
     }
 }

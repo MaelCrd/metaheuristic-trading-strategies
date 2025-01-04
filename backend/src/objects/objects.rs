@@ -128,6 +128,20 @@ pub struct Task {
     pub result_id: Option<i32>,
 }
 
+impl Task {
+    pub fn new(id: i32, state: TaskState, created_at: DateTime<Utc>) -> Task {
+        Task {
+            id,
+            state,
+            created_at,
+            other_parameters: None,
+            mh_object_id: None,
+            crypto_list_id: None,
+            result_id: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateTask {
     pub other_parameters: Option<String>,

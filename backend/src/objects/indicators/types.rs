@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
@@ -47,8 +46,11 @@ pub trait IndicatorTrait {
     // Get the values of the indicator
     fn get_values(&self) -> Vec<&Vec<Option<f64>>>;
 
+    // Calculate the criteria of the indicator
+    fn calculate_criteria(&mut self, kline_collection: &KlineCollection);
+
     // Get the criteria of the indicator
-    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion>;
+    fn get_criteria(&self) -> &Vec<Criterion>;
 }
 
 #[derive(Debug, Clone)]

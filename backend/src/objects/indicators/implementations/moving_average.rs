@@ -2,7 +2,7 @@ use sqlx::postgres::PgRow;
 use sqlx::Row;
 
 use crate::objects::{
-    criteria::{CompareCriterion, Criterion, CriterionTrait, CrossCriterion},
+    criteria::{CompareCriterion, Criterion, CrossCriterion},
     indicators::{IndicatorTrait, MovingAverage},
     klines::KlineCollection,
 };
@@ -70,7 +70,7 @@ impl IndicatorTrait for MovingAverage {
         vec![&self.values]
     }
 
-    fn get_criteria(&mut self, klines_collection: &KlineCollection) -> &Vec<Criterion> {
+    fn calculate_criteria(&mut self, kline_collection: &KlineCollection) {
         // If vec is empty, calculate the criteria
         if self.criteria.is_empty() {
             // Calculate the criteria
@@ -78,7 +78,7 @@ impl IndicatorTrait for MovingAverage {
 
             self.criteria.reserve(3);
             self.criteria.push(Criterion::Compare(CompareCriterion::new(
-                klines_collection.get_close_prices_iter(),
+                kline_collection.get_close_prices_iter(),
                 Box::new(values_iter.clone()),
             )));
 
@@ -95,8 +95,12 @@ impl IndicatorTrait for MovingAverage {
                     &self.criteria.get(0).unwrap(),
                     false,
                 )));
+        } else {
+            println!("Criteria already calculated");
         }
+    }
 
+    fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
     }
 }

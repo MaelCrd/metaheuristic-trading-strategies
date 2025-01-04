@@ -1,4 +1,4 @@
-use rayon::prelude::*;
+// use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 // Cross object
@@ -8,7 +8,10 @@ pub struct CrossCriterion {
 }
 
 impl CrossCriterion {
-    pub fn new(vec1: Box<impl Iterator<Item = f64>>, vec2: Box<impl Iterator<Item = f64>>) -> Self {
+    pub fn new(
+        _vec1: Box<impl Iterator<Item = f64>>,
+        _vec2: Box<impl Iterator<Item = f64>>,
+    ) -> Self {
         panic!("Not implemented");
         // let size = vec1.size_hint().1.unwrap();
         // let mut cross_criterion = CrossCriterion {
@@ -32,10 +35,10 @@ impl CrossCriterion {
         // cross_criterion
     }
 
-    pub fn new_from(compare_criterion: &Criterion, cross_side: bool) -> CrossCriterion {
+    pub fn new_from(compare_criterion: &Criterion, cross_side: bool) -> Self {
         let compare_criterion_values = compare_criterion.get_values();
         let size = compare_criterion_values.len();
-        let mut cross_criterion = CrossCriterion {
+        let mut cross_criterion = Self {
             values: Vec::with_capacity(size),
         };
         cross_criterion.values.resize(size, false);
@@ -60,12 +63,9 @@ pub struct CompareCriterion {
 }
 
 impl CompareCriterion {
-    pub fn new(
-        vec1: Box<impl Iterator<Item = f64>>,
-        vec2: Box<impl Iterator<Item = f64>>,
-    ) -> CompareCriterion {
+    pub fn new(vec1: Box<impl Iterator<Item = f64>>, vec2: Box<impl Iterator<Item = f64>>) -> Self {
         let size = vec1.size_hint().1.unwrap();
-        let mut compare_criterion = CompareCriterion {
+        let mut compare_criterion = Self {
             values: Vec::with_capacity(size),
         };
         compare_criterion.values.resize(size, false);
