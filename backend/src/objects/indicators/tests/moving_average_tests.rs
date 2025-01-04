@@ -25,10 +25,7 @@ pub fn test_moving_average_calculation() {
     }
 
     // Create a new moving average indicator
-    let mut ma = MovingAverage {
-        period: 7,
-        values: vec![],
-    };
+    let mut ma = MovingAverage::new(7);
 
     // Set all the values to None
     for _ in 0..kline_collection.get_length() {

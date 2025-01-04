@@ -38,12 +38,7 @@ pub fn test_stochastic_oscillator_calculation() {
     }
 
     // Create a new stochastic oscillator indicator
-    let mut so = StochasticOscillator {
-        k_period: 5,
-        d_period: 3,
-        k_values: vec![],
-        d_values: vec![],
-    };
+    let mut so = StochasticOscillator::new(5, 3);
 
     // Set all the values to None
     for _ in 0..kline_collection.get_length() {

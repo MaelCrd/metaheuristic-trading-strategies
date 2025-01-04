@@ -1,6 +1,8 @@
 mod implementations;
-mod tests;
 mod types;
+
+#[cfg(test)]
+mod tests;
 
 // pub use implementations::*;
 use sqlx::postgres::PgRow;

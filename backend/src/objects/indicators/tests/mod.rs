@@ -1,7 +1,4 @@
-#[cfg(test)]
 mod moving_average_tests;
-
-#[cfg(test)]
 mod stochastic_tests;
 
 use crate::objects::klines::Kline;

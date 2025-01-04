@@ -84,15 +84,17 @@ impl IndicatorTrait for MovingAverage {
 
             //////// cross est dérivé de compare (false -> true = cross et l'inverse)
 
-            self.criteria.push(Criterion::Cross(CrossCriterion::new(
-                Box::new(values_iter.clone()),
-                klines_collection.get_close_prices_iter(),
-            )));
+            self.criteria
+                .push(Criterion::Cross(CrossCriterion::new_from(
+                    &self.criteria.get(0).unwrap(),
+                    true,
+                )));
 
-            self.criteria.push(Criterion::Cross(CrossCriterion::new(
-                klines_collection.get_close_prices_iter(),
-                Box::new(values_iter.clone()),
-            )));
+            self.criteria
+                .push(Criterion::Cross(CrossCriterion::new_from(
+                    &self.criteria.get(0).unwrap(),
+                    false,
+                )));
         }
 
         &self.criteria
