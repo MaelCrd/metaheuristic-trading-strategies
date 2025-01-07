@@ -11,12 +11,6 @@ pub fn get_table_name_collection(klines_collection: &KlineCollection) -> String 
     get_table_name(&klines_collection.symbol, &klines_collection.interval)
 }
 
-pub async fn connect_to_db() -> PgPool {
-    PgPool::connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
-        .await
-        .expect("Failed to create pool.")
-}
-
 pub async fn create_klines_table(pool: &PgPool, table_name: &str) -> Result<(), sqlx::Error> {
     let result = sqlx::query(&format!(
         r#"

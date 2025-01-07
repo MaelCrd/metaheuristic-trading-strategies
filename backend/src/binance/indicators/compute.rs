@@ -10,7 +10,7 @@ pub async fn compute_indicator(
     let table_name = utils::get_table_name_collection(&kline_collection);
 
     // Check if the table exists
-    let pool = utils::connect_to_db().await;
+    let pool = crate::utils::db::get_new_pool().await;
 
     // Calculate indicator values
     indicator.calculate(kline_collection);

@@ -48,7 +48,7 @@ pub async fn retrieve_klines(
     let mut only_before: Option<DateTime<Utc>> = only_before;
 
     // Check if the table exists
-    let pool = utils::connect_to_db().await;
+    let pool = crate::utils::db::get_new_pool().await;
     let table_exists = utils::check_table_exists(&pool, &table_name).await;
     let mut table_length = match table_exists {
         true => utils::get_table_length(&pool, &table_name).await,

@@ -41,7 +41,7 @@ pub async fn retrieve_indicator(
     // We assume klines are already present in the database
     let table_name: String = klines::utils::get_table_name_collection(kline_collection);
     let indicator_columns: Vec<String> = indicator.column_names();
-    let pool = klines::utils::connect_to_db().await;
+    let pool = crate::utils::db::get_new_pool().await;
 
     // Check if the indicator columns exists
     let columns_exists =

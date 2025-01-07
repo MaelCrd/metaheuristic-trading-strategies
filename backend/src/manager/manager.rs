@@ -13,7 +13,7 @@ use super::{processor::TasksProcessor, threads::ThreadStatus};
 use crate::{interface::handlers::tasks, objects::objects::TaskState};
 
 pub struct TaskManager {
-    pool: Pool<Postgres>,
+    pub pool: Pool<Postgres>,
     tasks_processor: TasksProcessor,
     statuses: Arc<Mutex<HashMap<i32, ThreadStatus>>>,
     cancel_flags: Arc<Mutex<HashMap<i32, Arc<AtomicBool>>>>,
@@ -27,7 +27,7 @@ impl TaskManager {
             tasks_processor: TasksProcessor::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
-            max_threads: 2,
+            max_threads: 8,
         }
     }
 
@@ -41,7 +41,7 @@ impl TaskManager {
             tasks_processor: TasksProcessor::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
-            max_threads: 2,
+            max_threads: 8,
         }
     }
 
@@ -123,6 +123,40 @@ impl TaskManager {
 
         self.tasks_processor.display_tasks();
         Ok(())
+    }
+
+    async fn start_task(&self, task_id: i32) {
+        // //Spawn a successful thread
+        // self.spawn_monitored_thread(task_id, |should_cancel| {
+        //     // thread::sleep(Duration::from_secs(2));
+        //     let mut i: i64 = 0;
+        //     for _ in 0..21474836 {
+        //         for __ in 0..100 {
+        //             i += 1;
+        //         }
+        //         // Check if we should cancel
+        //         if should_cancel.load(Ordering::SeqCst) {
+        //             return Err("Task was cancelled".to_string());
+        //         }
+        //     }
+        //     Ok("Task completed successfully".to_string())
+        // });
+
+        let pool_state = rocket::State::from(&self.pool);
+        let task_list = tasks::get_tasks(&pool_state, Some(task_id.to_string()))
+            .await
+            .unwrap();
+        let tasks = task_list.get(0).cloned();
+        if tasks.is_none() {
+            return;
+        }
+
+        let task = tasks.unwrap();
+
+        self.spawn_monitored_thread(task_id, move |should_cancel| {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async { task.execute(should_cancel).await })
+        });
     }
 
     async fn handle_task_pending(
@@ -212,7 +246,7 @@ impl TaskManager {
         res
     }
 
-    pub fn spawn_monitored_thread<F>(&self, task_id: i32, work: F)
+    fn spawn_monitored_thread<F>(&self, task_id: i32, work: F)
     where
         F: FnOnce(Arc<AtomicBool>) -> Result<String, String> + Send + 'static,
     {

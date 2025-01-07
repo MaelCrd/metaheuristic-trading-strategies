@@ -1,18 +1,26 @@
 use rocket::serde::json::Json;
 use rocket::State;
 use rocket::{get, post, put};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 
 use crate::objects::objects::{CreateMHObject, MHObject};
 
 // Define a route to get all MHObjects
-#[get("/mh_object")]
-pub async fn get_mh_objects(pool: &State<PgPool>) -> Json<Vec<MHObject>> {
-    let recs = sqlx::query!(
-        r#"
-        SELECT id, hidden, mh_parameters, other_parameters
-        FROM mh_object
-        "#,
+#[get("/mh_object?<id>")]
+pub async fn get_mh_objects(pool: &State<PgPool>, id: Option<String>) -> Json<Vec<MHObject>> {
+    let str_id = match id {
+        Some(id) => format!("WHERE id = {}", id),
+        None => "".to_string(),
+    };
+    let recs = sqlx::query(
+        format!(
+            r#"
+            SELECT id, hidden, mh_parameters, other_parameters
+            FROM mh_object {}
+            "#,
+            str_id
+        )
+        .as_str(),
     )
     .fetch_all(&**pool)
     .await
@@ -21,10 +29,10 @@ pub async fn get_mh_objects(pool: &State<PgPool>) -> Json<Vec<MHObject>> {
     let mh_objects: Vec<MHObject> = recs
         .into_iter()
         .map(|row| MHObject {
-            id: row.id,
-            hidden: row.hidden,
-            mh_parameters: row.mh_parameters,
-            other_parameters: row.other_parameters,
+            id: row.get("id"),
+            hidden: row.get("hidden"),
+            mh_parameters: row.get("mh_parameters"),
+            other_parameters: row.get("other_parameters"),
         })
         .collect();
 
@@ -51,7 +59,7 @@ pub async fn create_mh_object(
     .unwrap();
 
     // Return the MHObjects
-    get_mh_objects(pool).await
+    get_mh_objects(pool, None).await
 }
 
 // Define a route to hide/show a MHObject
@@ -85,5 +93,5 @@ pub async fn hide_mh_object(
     }
 
     // Return the MHObjects
-    Ok(get_mh_objects(pool).await)
+    Ok(get_mh_objects(pool, None).await)
 }
