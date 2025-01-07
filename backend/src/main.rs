@@ -31,15 +31,15 @@ async fn main() {
 
     //
 
-    // let task_manager = manager::TaskManager::new().await;
-    // tokio::spawn(async move {
-    //     task_manager.start().await.unwrap();
-    // });
+    let task_manager = manager::TaskManager::new().await;
+    tokio::spawn(async move {
+        task_manager.start().await.unwrap();
+    });
 
-    // // Run the Rocket application
-    // rocket::rocket().launch().await.unwrap();
+    // Run the Rocket application
+    rocket::rocket().launch().await.unwrap();
 
-    // return;
+    return;
 
     //
 

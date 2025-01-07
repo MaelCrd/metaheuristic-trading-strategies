@@ -1,131 +1,22 @@
-use chrono::DateTime;
-use chrono::TimeZone;
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
 use sqlx::Pool;
 use sqlx::Postgres;
 use std::collections::HashMap;
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::threads::ThreadStatus;
-use crate::interface::handlers::tasks;
-use crate::objects::objects::{Task, TaskState};
-
-#[derive(Debug, Serialize, Deserialize)]
-enum TaskOperation {
-    Insert,
-    Update,
-    Delete,
-}
-
-impl TaskOperation {
-    fn from_str(s: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        match s {
-            "Insert" => Ok(TaskOperation::Insert),
-            "Update" => Ok(TaskOperation::Update),
-            "Delete" => Ok(TaskOperation::Delete),
-            _ => Err("Invalid TaskOperation".into()),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct TaskNotification {
-    operation: TaskOperation,
-    task_id: i32,
-    state: Option<TaskState>,
-    created_at: Option<DateTime<Utc>>,
-}
-
-struct TasksProcessor {
-    pending_tasks: Arc<Mutex<Vec<i32>>>,
-    cancelling_tasks: Arc<Mutex<Vec<i32>>>,
-    running_tasks: Arc<Mutex<Vec<i32>>>,
-}
-
-impl TasksProcessor {
-    fn new() -> Self {
-        Self {
-            pending_tasks: Arc::new(Mutex::new(Vec::<i32>::new())),
-            cancelling_tasks: Arc::new(Mutex::new(Vec::<i32>::new())),
-            running_tasks: Arc::new(Mutex::new(Vec::<i32>::new())),
-        }
-    }
-
-    fn add_pending_task(&self, task_id: i32) -> bool {
-        // Add if not already present
-        if !self.pending_tasks.lock().unwrap().contains(&task_id) {
-            self.pending_tasks.lock().unwrap().push(task_id);
-            return true;
-        }
-        false
-    }
-
-    fn add_cancelling_task(&self, task_id: i32) -> bool {
-        // Add if not already present
-        if !self.cancelling_tasks.lock().unwrap().contains(&task_id) {
-            self.cancelling_tasks.lock().unwrap().push(task_id);
-            return true;
-        }
-        false
-    }
-
-    fn add_running_task(&self, task_id: i32) -> bool {
-        // Add if not already present
-        if !self.running_tasks.lock().unwrap().contains(&task_id) {
-            self.running_tasks.lock().unwrap().push(task_id);
-            return true;
-        }
-        false
-    }
-
-    fn remove_pending_task(&self, task_id: i32) {
-        let mut pending_tasks = self.pending_tasks.lock().unwrap();
-        if let Some(index) = pending_tasks.iter().position(|&x| x == task_id) {
-            pending_tasks.remove(index);
-        }
-    }
-
-    fn remove_cancelling_task(&self, task_id: i32) {
-        let mut cancelling_tasks = self.cancelling_tasks.lock().unwrap();
-        if let Some(index) = cancelling_tasks.iter().position(|&x| x == task_id) {
-            cancelling_tasks.remove(index);
-        }
-    }
-
-    fn remove_running_task(&self, task_id: i32) {
-        let mut running_tasks = self.running_tasks.lock().unwrap();
-        if let Some(index) = running_tasks.iter().position(|&x| x == task_id) {
-            running_tasks.remove(index);
-        }
-    }
-
-    fn get_pending_tasks(&self) -> Vec<i32> {
-        self.pending_tasks.lock().unwrap().clone()
-    }
-
-    fn get_cancelling_tasks(&self) -> Vec<i32> {
-        self.cancelling_tasks.lock().unwrap().clone()
-    }
-
-    fn get_running_tasks(&self) -> Vec<i32> {
-        self.running_tasks.lock().unwrap().clone()
-    }
-
-    fn display_tasks(&self) {
-        println!("Pending Tasks: {:?}", self.get_pending_tasks());
-        println!("Cancelling Tasks: {:?}", self.get_cancelling_tasks());
-        println!("Running Tasks: {:?}", self.get_running_tasks());
-    }
-}
+use super::{processor::TasksProcessor, threads::ThreadStatus};
+use crate::{interface::handlers::tasks, objects::objects::TaskState};
 
 pub struct TaskManager {
     pool: Pool<Postgres>,
     tasks_processor: TasksProcessor,
     statuses: Arc<Mutex<HashMap<i32, ThreadStatus>>>,
+    cancel_flags: Arc<Mutex<HashMap<i32, Arc<AtomicBool>>>>,
     max_threads: usize,
 }
 
@@ -135,6 +26,7 @@ impl TaskManager {
             pool,
             tasks_processor: TasksProcessor::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
+            cancel_flags: Arc::new(Mutex::new(HashMap::new())),
             max_threads: 2,
         }
     }
@@ -148,6 +40,7 @@ impl TaskManager {
                 .unwrap(),
             tasks_processor: TasksProcessor::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
+            cancel_flags: Arc::new(Mutex::new(HashMap::new())),
             max_threads: 2,
         }
     }
@@ -155,15 +48,11 @@ impl TaskManager {
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         println!("Started listening for tasks...");
 
-        // self.test();
-
         // Periodically check for new tasks (every 2 seconds)
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
         loop {
-            let start_time = Instant::now();
             interval.tick().await;
             self.check_for_tasks().await?;
-            println!("Elapsed time: {:?}", start_time.elapsed());
         }
     }
 
@@ -180,10 +69,14 @@ impl TaskManager {
                     TaskState::Completed,
                 )
                 .await;
-                self.tasks_processor.remove_running_task(task_id);
-                println!("Task completed - ID: {}", task_id);
-                // Remove the task from the statuses
-                self.statuses.lock().unwrap().remove(&task_id);
+                if res.is_ok() {
+                    self.tasks_processor.remove_running_task(task_id);
+                    println!("Task completed - ID: {}", task_id);
+                    // Remove the task from the statuses
+                    self.statuses.lock().unwrap().remove(&task_id);
+                } else {
+                    println!("Error completing task - ID: {}", task_id);
+                }
             }
         }
 
@@ -196,6 +89,7 @@ impl TaskManager {
 
     async fn check_for_tasks(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Check for completed tasks
+        println!("---------------------------");
         self.check_completed_start_pending().await;
 
         // Get all tasks
@@ -231,7 +125,10 @@ impl TaskManager {
         Ok(())
     }
 
-    async fn handle_task_pending(&self, task_id: i32) -> Result<(), Box<dyn std::error::Error>> {
+    async fn handle_task_pending(
+        &self,
+        task_id: i32,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // When a task is pending, it should be started
 
         // If the maximum number of threads is reached, do not start the task
@@ -250,17 +147,9 @@ impl TaskManager {
         if self.tasks_processor.add_running_task(task_id) && res.is_ok() {
             // Remove the task from the pending list
             self.tasks_processor.remove_pending_task(task_id);
-            // Start the task in a new thread
 
-            // Spawn a successful thread
-            self.spawn_monitored_thread(task_id, || {
-                // thread::sleep(Duration::from_secs(2));
-                let mut i: i64 = 0;
-                for _ in 0..2147483645 {
-                    i += 1;
-                }
-                Ok("Task completed successfully".to_string())
-            });
+            // Start the task
+            self.start_task(task_id).await;
 
             return Ok(());
         }
@@ -269,13 +158,41 @@ impl TaskManager {
     }
 
     async fn handle_task_cancelling(&self, task_id: i32) -> Result<(), Box<dyn std::error::Error>> {
-        // let task = Task::get_by_id(&self.pool, task_id).await?;
-        // task.execute().await?;
+        // If task is pending, it should be cancelled
+        if self.tasks_processor.get_pending_tasks().contains(&task_id) {
+            // Remove the task from the pending list
+            self.tasks_processor.remove_pending_task(task_id);
+        }
+        // If task is running, it should be cancelled
+        else if self.tasks_processor.get_running_tasks().contains(&task_id) {
+            // Remove the task from the running list
+            self.tasks_processor.remove_running_task(task_id);
+            // Set the task's cancel atomic flag to true
+            if let Some(flag) = self.cancel_flags.lock().unwrap().get(&task_id) {
+                flag.store(true, Ordering::SeqCst);
+            }
+        }
+
+        // Set the task state to cancelled
+        let res = tasks::update_task_state(
+            &rocket::State::from(&self.pool),
+            task_id,
+            TaskState::Cancelled,
+        )
+        .await;
+        if res.is_ok() {
+            // Remove the task from the cancelling list
+            self.tasks_processor.remove_cancelling_task(task_id);
+            println!("Task cancelled - ID: {}", task_id);
+        }
 
         Ok(())
     }
 
-    async fn handle_task_running(&self, task_id: i32) -> Result<(), Box<dyn std::error::Error>> {
+    async fn handle_task_running(
+        &self,
+        task_id: i32,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Should not be called for a running task,
         // only if the task is in the running state but not actually running
         // So : task failed
@@ -295,11 +212,19 @@ impl TaskManager {
         res
     }
 
-    fn spawn_monitored_thread<F>(&self, task_id: i32, work: F)
+    pub fn spawn_monitored_thread<F>(&self, task_id: i32, work: F)
     where
-        F: FnOnce() -> Result<String, String> + Send + 'static,
+        F: FnOnce(Arc<AtomicBool>) -> Result<String, String> + Send + 'static,
     {
         let status_map = Arc::clone(&self.statuses);
+        let cancel_flags = Arc::clone(&self.cancel_flags);
+
+        // Create a new atomic flag for this task
+        let should_cancel = Arc::new(AtomicBool::new(false));
+        cancel_flags
+            .lock()
+            .unwrap()
+            .insert(task_id, Arc::clone(&should_cancel));
 
         thread::spawn(move || {
             let start_time = Instant::now();
@@ -320,7 +245,7 @@ impl TaskManager {
             }
 
             // Execute the work
-            let work_result = work();
+            let work_result = work(should_cancel);
 
             // Update thread status
             let mut statuses = status_map.lock().unwrap();
@@ -341,9 +266,9 @@ impl TaskManager {
         println!("Spawned thread: {}", task_id);
     }
 
-    fn get_status(&self, task_id: i32) -> Option<ThreadStatus> {
-        self.statuses.lock().unwrap().get(&task_id).cloned()
-    }
+    // fn get_status(&self, task_id: i32) -> Option<ThreadStatus> {
+    //     self.statuses.lock().unwrap().get(&task_id).cloned()
+    // }
 
     fn get_all_statuses(&self) -> HashMap<i32, ThreadStatus> {
         self.statuses.lock().unwrap().clone()

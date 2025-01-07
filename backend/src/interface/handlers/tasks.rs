@@ -174,7 +174,7 @@ pub async fn update_task_state(
     pool: &State<PgPool>,
     id: i32,
     state: TaskState,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let result = sqlx::query!(
         r#"
         UPDATE task
