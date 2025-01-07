@@ -77,15 +77,17 @@ pub async fn get_tasks(
 }
 
 // Define a route to create a task
-#[post("/task", data = "<task>")]
+#[post("/task?<queue>", data = "<task>")]
 pub async fn create_task(
     pool: &State<PgPool>,
     task: Json<CreateTask>,
+    queue: Option<bool>,
 ) -> Result<Json<Vec<Task>>, rocket::http::Status> {
-    sqlx::query!(
+    let res = sqlx::query!(
         r#"
         INSERT INTO task (other_parameters, mh_object_id, crypto_list_id)
         VALUES ($1, $2, $3)
+        RETURNING id
         "#,
         task.other_parameters,
         task.mh_object_id,
@@ -94,6 +96,18 @@ pub async fn create_task(
     .fetch_all(&**pool)
     .await
     .unwrap();
+
+    if queue.unwrap_or(false) {
+        let id = res[0].id;
+
+        queue_task(pool, id).await.unwrap();
+
+        // Check if the task was found
+        // if result.rows_affected() == 0 {
+        //     println!("Task not found or already queued (id: {})", id);
+        //     return Err(rocket::http::Status::NotFound);
+        // }
+    }
 
     // Return the task
     Ok(get_tasks(pool, None).await.unwrap())
@@ -153,4 +167,35 @@ pub async fn cancel_task(
 
     // Return the task
     Ok(get_tasks(pool, None).await.unwrap())
+}
+
+// Not routes, but functions to be used by the manager
+pub async fn update_task_state(
+    pool: &State<PgPool>,
+    id: i32,
+    state: TaskState,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE task
+        SET state = $2
+        WHERE id = $1 AND state != $2
+        "#,
+        id,
+        state as TaskState
+    )
+    .execute(&**pool)
+    .await
+    .unwrap();
+
+    match result.rows_affected() {
+        0 => {
+            println!(
+                "Task not found or already in the desired state (id: {})",
+                id
+            );
+            Err("Task not found or already in the desired state".into())
+        }
+        _ => Ok(()),
+    }
 }
