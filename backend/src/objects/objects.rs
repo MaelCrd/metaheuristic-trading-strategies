@@ -89,7 +89,7 @@ pub struct Result {
 
 // --- Tasks --- //
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
 #[sqlx(type_name = "state_enum", rename_all = "UPPERCASE")]
 pub enum TaskState {
     Created,
@@ -138,6 +138,23 @@ impl Task {
             mh_object_id: None,
             crypto_list_id: None,
             result_id: None,
+        }
+    }
+
+    pub async fn set_state(&mut self, pool: &sqlx::PgPool, state: TaskState) {
+        match crate::interface::handlers::tasks::update_task_state(
+            &rocket::State::from(pool),
+            self.id,
+            state.clone(),
+        )
+        .await
+        {
+            Ok(_) => {
+                self.state = state;
+            }
+            Err(_) => {
+                println!("Error updating task state");
+            }
         }
     }
 }
