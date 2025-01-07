@@ -2,7 +2,6 @@ use chrono::DateTime;
 use chrono::TimeZone;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::postgres::PgListener;
 use sqlx::Pool;
 use sqlx::Postgres;
 use std::collections::HashMap;
@@ -168,7 +167,7 @@ impl TaskManager {
         }
     }
 
-    async fn check_for_tasks(&self) -> Result<(), Box<dyn std::error::Error>> {
+    async fn check_completed_start_pending(&self) {
         // When a task is completed, it should be removed from the pending list
         let running_tasks = self.tasks_processor.get_running_tasks();
         for (task_id, status) in self.get_all_statuses() {
@@ -193,6 +192,11 @@ impl TaskManager {
         for task_id in pending_tasks {
             let _ = self.handle_task_pending(task_id).await;
         }
+    }
+
+    async fn check_for_tasks(&self) -> Result<(), Box<dyn std::error::Error>> {
+        // Check for completed tasks
+        self.check_completed_start_pending().await;
 
         // Get all tasks
         let tasks = tasks::get_tasks(&rocket::State::from(&self.pool), None)
@@ -289,42 +293,6 @@ impl TaskManager {
         println!("Task failed - ID: {}", task_id);
 
         res
-    }
-
-    fn test(&self) {
-        // Spawn a successful thread
-        self.spawn_monitored_thread(1, || {
-            // thread::sleep(Duration::from_secs(2));
-            let mut i = 0;
-            for _ in 0..1000000000 {
-                i += 1;
-            }
-            Ok("Task completed successfully".to_string())
-        });
-
-        // Spawn a failing thread
-        self.spawn_monitored_thread(2, || {
-            // thread::sleep(Duration::from_secs(1));
-            let mut i = 0;
-            for _ in 0..1000000000 {
-                i += 1;
-            }
-            Err("Something went wrong".to_string())
-        });
-
-        // Monitor thread progress
-        for _ in 0..14 {
-            println!("Current thread statuses:");
-            for (name, status) in self.get_all_statuses() {
-                println!(
-                    "Thread '{}': {:?} ({:?})",
-                    name,
-                    status,
-                    status.start_time.elapsed()
-                );
-            }
-            thread::sleep(Duration::from_millis(300));
-        }
     }
 
     fn spawn_monitored_thread<F>(&self, task_id: i32, work: F)

@@ -3,7 +3,8 @@ use chrono::{DateTime, Utc}; // NaiveDateTime
 use serde::{Deserialize, Serialize};
 
 use super::intervals;
-use crate::binance::klines;
+use crate::binance::{self, klines};
+use crate::objects::indicators::Indicator;
 
 // --- Klines --- //
 
@@ -170,6 +171,32 @@ impl KlineCollection {
         } else {
             println!("Klines collection integrity FAILED X");
         }
+    }
+
+    pub async fn retrieve_klines_simple(
+        &mut self,
+        symbol: &str,
+        interval: &intervals::CryptoInterval,
+        limit_minutes: i64,
+        training_percentage: f64,
+        force_fetch: bool,
+    ) -> Result<(), sqlx::Error> {
+        binance::klines::retrieve::retrieve_klines_simple(
+            self,
+            symbol,
+            interval,
+            limit_minutes,
+            training_percentage,
+            force_fetch,
+        )
+        .await
+    }
+
+    pub async fn retrieve_extended_klines(
+        &mut self,
+        indicator: &Indicator,
+    ) -> Result<(), sqlx::Error> {
+        binance::indicators::retrieve::retrieve_extended_klines(self, indicator).await
     }
 }
 

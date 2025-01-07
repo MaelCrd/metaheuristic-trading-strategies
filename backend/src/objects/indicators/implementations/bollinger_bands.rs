@@ -1,6 +1,7 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
+use crate::binance;
 use crate::objects::{
     criteria::Criterion,
     indicators::{BollingerBands, IndicatorTrait},

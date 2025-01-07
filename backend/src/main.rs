@@ -31,15 +31,15 @@ async fn main() {
 
     //
 
-    let task_manager = manager::TaskManager::new().await;
-    tokio::spawn(async move {
-        task_manager.start().await.unwrap();
-    });
+    // let task_manager = manager::TaskManager::new().await;
+    // tokio::spawn(async move {
+    //     task_manager.start().await.unwrap();
+    // });
 
-    // Run the Rocket application
-    rocket::rocket().launch().await.unwrap();
+    // // Run the Rocket application
+    // rocket::rocket().launch().await.unwrap();
 
-    return;
+    // return;
 
     //
 
@@ -55,16 +55,16 @@ async fn main() {
     let force_fetch = false;
 
     let mut klines_collection: KlineCollection = KlineCollection::new();
-    if binance::klines::retrieve::retrieve_klines_simple(
-        &mut klines_collection,
-        "BTCUSDT",
-        &CryptoInterval::Int5m,
-        chrono::Duration::minutes(minutes).num_minutes(),
-        0.75,
-        force_fetch,
-    )
-    .await
-    .is_err()
+    if klines_collection
+        .retrieve_klines_simple(
+            "BTCUSDT",
+            &CryptoInterval::Int5m,
+            chrono::Duration::minutes(minutes).num_minutes(),
+            0.75,
+            force_fetch,
+        )
+        .await
+        .is_err()
     {
         println!("Error retrieving klines");
         return;
@@ -87,7 +87,8 @@ async fn main() {
     //     Indicator::StochasticOscillator(StochasticOscillator::new(5, 3));
     let mut indicator_2 = Indicator::MovingAverage(MovingAverage::new(7));
 
-    if binance::indicators::retrieve::retrieve_extended_klines(&mut klines_collection, &indicator_2)
+    if klines_collection
+        .retrieve_extended_klines(&indicator_2)
         .await
         .is_err()
     {
@@ -98,10 +99,7 @@ async fn main() {
     klines_collection.display();
 
     // Indicator test
-    if binance::indicators::retrieve::retrieve_indicator(&mut indicator_2, &klines_collection)
-        .await
-        .is_err()
-    {
+    if indicator_2.retrieve(&klines_collection).await.is_err() {
         println!("Error retrieving indicator");
         return;
     }

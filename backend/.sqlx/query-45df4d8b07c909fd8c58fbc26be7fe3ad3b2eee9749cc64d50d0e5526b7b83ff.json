@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE task\n        SET state = $2\n        WHERE id = $1 AND state != $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        {
+          "Custom": {
+            "name": "state_enum",
+            "kind": {
+              "Enum": [
+                "CREATED",
+                "PENDING",
+                "RUNNING",
+                "CANCELLING",
+                "CANCELLED",
+                "COMPLETED",
+                "FAILED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "45df4d8b07c909fd8c58fbc26be7fe3ad3b2eee9749cc64d50d0e5526b7b83ff"
+}

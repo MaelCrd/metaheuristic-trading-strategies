@@ -1,5 +1,6 @@
 use sqlx::postgres::PgRow;
 
+use crate::binance;
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 #[derive(Debug, Clone)]
@@ -51,6 +52,15 @@ pub trait IndicatorTrait {
 
     // Get the criteria of the indicator
     fn get_criteria(&self) -> &Vec<Criterion>;
+}
+
+impl Indicator {
+    pub async fn retrieve(
+        &mut self,
+        kline_collection: &KlineCollection,
+    ) -> Result<(), sqlx::Error> {
+        binance::indicators::retrieve::retrieve_indicator(self, &kline_collection).await
+    }
 }
 
 #[derive(Debug, Clone)]
