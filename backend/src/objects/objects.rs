@@ -48,6 +48,7 @@ pub struct CryptoList {
     pub hidden: bool,
     pub name: String,
     pub interval: intervals::CryptoInterval,
+    pub limit_count: i32,
     pub r#type: String,
 }
 
@@ -57,6 +58,7 @@ pub struct CryptoListComplete {
     pub hidden: bool,
     pub name: String,
     pub interval: intervals::CryptoInterval,
+    pub limit_count: i32,
     pub r#type: String,
     pub crypto_symbols: Vec<i32>,
 }
@@ -65,6 +67,7 @@ pub struct CryptoListComplete {
 pub struct CreateCryptoList {
     pub name: String,
     pub interval: intervals::CryptoInterval,
+    pub limit_count: i32,
     pub r#type: String,
     pub crypto_symbols: Vec<i32>,
 }

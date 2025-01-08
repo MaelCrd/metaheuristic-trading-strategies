@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS crypto_list (
     hidden BOOLEAN DEFAULT FALSE NOT NULL,
     name VARCHAR(255) NOT NULL,
     interval crypto_interval NOT NULL,
+    limit_count INTEGER NOT NULL,
     type VARCHAR(255) NOT NULL
 );
 
@@ -115,8 +116,8 @@ VALUES ('BTC', 'Bitcoin', 1.0, '2021-01-01 00:00:00'),
        ('XRP', 'Ripple', 0.3, '2021-01-01 00:00:00');
 
 -- Insert data into crypto_list Table
-INSERT INTO crypto_list (name, type, interval)
-VALUES ('Top 2', 'Top', 'Int1h');
+INSERT INTO crypto_list (name, type, interval, limit_count)
+VALUES ('Top 2', 'Top', 'Int1h', 20);
 
 -- Insert data into crypto_list_x_crypto_symbol Table
 INSERT INTO crypto_list_x_crypto_symbol (crypto_list_id, crypto_symbol_id)

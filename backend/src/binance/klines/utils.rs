@@ -1,5 +1,4 @@
 use sqlx::PgPool;
-use std::env;
 
 use crate::objects::{intervals::CryptoInterval, klines::KlineCollection};
 

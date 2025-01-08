@@ -28,7 +28,7 @@ pub fn mh_nsga_ii() {
             Variable::Float(v) => v,
             _ => panic!("Expected float"),
         };
-        let b = match vars[1] {
+        let _b = match vars[1] {
             Variable::Boolean(v) => v,
             _ => panic!("Expected boolean"),
         };
