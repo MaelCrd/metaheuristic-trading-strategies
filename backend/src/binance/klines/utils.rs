@@ -8,7 +8,10 @@ pub fn get_table_name(symbol: &str, interval: &CryptoInterval) -> String {
 }
 
 pub fn get_table_name_collection(klines_collection: &KlineCollection) -> String {
-    get_table_name(&klines_collection.symbol, &klines_collection.interval)
+    get_table_name(
+        &klines_collection.symbol.symbol,
+        &klines_collection.interval,
+    )
 }
 
 pub async fn create_klines_table(pool: &PgPool, table_name: &str) -> Result<(), sqlx::Error> {

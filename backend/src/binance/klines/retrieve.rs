@@ -7,12 +7,13 @@ use super::utils;
 use crate::objects::{
     intervals::CryptoInterval,
     klines::{Kline, KlineCollection},
+    objects::CryptoSymbol,
 };
 
 // Function to retrieve klines from database with the given parameters
 pub async fn retrieve_klines_simple(
     klines_collection: &mut KlineCollection,
-    symbol: &str,
+    symbol: &CryptoSymbol,
     interval: &CryptoInterval,
     limit_minutes: i64,
     training_percentage: f64,
@@ -34,7 +35,7 @@ pub async fn retrieve_klines_simple(
 // Function to retrieve klines from database
 pub async fn retrieve_klines(
     klines_collection: &mut KlineCollection,
-    symbol: &str,
+    symbol: &CryptoSymbol,
     interval: &CryptoInterval,
     limit_minutes: i64,
     training_percentage: f64,
@@ -43,7 +44,7 @@ pub async fn retrieve_klines(
     additional_klines: Option<i32>, // will be added to the 'past' klines vector
 ) -> Result<(), sqlx::Error> {
     // Retrieve the klines from the database
-    let table_name = utils::get_table_name(symbol, interval);
+    let table_name = utils::get_table_name(&symbol.symbol, interval);
     let mut limit = limit_minutes / interval.to_minutes();
     let mut only_before: Option<DateTime<Utc>> = only_before;
 
@@ -68,7 +69,10 @@ pub async fn retrieve_klines(
                 FROM {}
                 WHERE open_time < {}
                 "#,
-                utils::get_table_name(&klines_collection.symbol, &klines_collection.interval),
+                utils::get_table_name(
+                    &klines_collection.symbol.symbol,
+                    &klines_collection.interval
+                ),
                 klines_collection.get_last_open_time().timestamp_millis()
             ))
             .fetch_one(&pool)
@@ -95,7 +99,7 @@ pub async fn retrieve_klines(
         // Acquire the klines from the Binance API
         acquire::acquire_klines(
             &pool,
-            &symbol,
+            &symbol.symbol,
             &interval,
             &Some(limit),
             table_exists,
@@ -166,7 +170,7 @@ pub async fn retrieve_klines(
         klines_collection.past.splice(0..0, past_klines);
     }
 
-    klines_collection.symbol = symbol.to_string();
+    klines_collection.symbol = symbol.clone();
     klines_collection.interval = interval.clone();
 
     Ok(())

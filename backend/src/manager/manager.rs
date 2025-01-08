@@ -63,19 +63,34 @@ impl TaskManager {
             println!("Task ID: {}, Status: {:?}", task_id, status);
             if running_tasks.contains(&task_id) && status.is_complete {
                 // Remove the task from the running list
-                let res = tasks::update_task_state(
-                    &rocket::State::from(&self.pool),
-                    task_id,
-                    TaskState::Completed,
-                )
-                .await;
+                let new_state = match status.success {
+                    true => {
+                        // Set the task state to completed
+                        TaskState::Completed
+                    }
+                    false => {
+                        // Set the task state to failed
+                        TaskState::Failed
+                    }
+                };
+                let res =
+                    tasks::update_task_state(&rocket::State::from(&self.pool), task_id, new_state)
+                        .await;
+
                 if res.is_ok() {
                     self.tasks_processor.remove_running_task(task_id);
-                    println!("Task completed - ID: {}", task_id);
+                    match status.success {
+                        true => {
+                            println!("Task completed - ID: {}", task_id);
+                        }
+                        false => {
+                            println!("Task failed - ID: {} ({})", task_id, status.result);
+                        }
+                    }
                     // Remove the task from the statuses
                     self.statuses.lock().unwrap().remove(&task_id);
                 } else {
-                    println!("Error completing task - ID: {}", task_id);
+                    println!("Error removing task - ID: {}", task_id);
                 }
             }
         }
@@ -89,14 +104,14 @@ impl TaskManager {
 
     async fn check_for_tasks(&self) -> Result<(), Box<dyn std::error::Error>> {
         // Check for completed tasks
-        println!("---------------------------");
+        // println!("---------------------------");
         self.check_completed_start_pending().await;
 
         // Get all tasks
         let tasks = tasks::get_tasks(&rocket::State::from(&self.pool), None)
             .await
             .unwrap();
-        println!("---------------------------");
+        // println!("---------------------------");
         for task in tasks.into_inner() {
             match task.state {
                 TaskState::Pending => {
@@ -121,7 +136,7 @@ impl TaskManager {
             }
         }
 
-        self.tasks_processor.display_tasks();
+        // self.tasks_processor.display_tasks();
         Ok(())
     }
 

@@ -12,7 +12,7 @@ static STR_AFTER: Lazy<String> = Lazy::new(|| format!("╺"));
 static STR_TODO: Lazy<String> = Lazy::new(|| format!("━"));
 
 pub fn print_loading_progress(progress: i32, total: i32) {
-    let i = (progress * 40) / total;
+    let i = (progress * 40) / (if total != 0 { total } else { 1 });
     print!(
         "\r{}Loading... {}{} ",
         TEXT_COLOR,

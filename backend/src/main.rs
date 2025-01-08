@@ -1,9 +1,11 @@
 use std::env;
 
 use backend::objects::{
+    self,
     indicators::{Indicator, IndicatorTrait, MovingAverage, StochasticOscillator},
     intervals::CryptoInterval,
     klines::KlineCollection,
+    objects::CryptoSymbol,
 };
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
@@ -54,10 +56,18 @@ async fn main() {
     let minutes = 10 * 5;
     let force_fetch = false;
 
+    let crypto_symbol = CryptoSymbol {
+        id: 1,
+        symbol: "BTCUSDT".to_string(),
+        name: "Bitcoin".to_string(),
+        volume: 100.0,
+        last_updated: chrono::Utc::now(),
+        available: true,
+    };
     let mut klines_collection: KlineCollection = KlineCollection::new();
     if klines_collection
         .retrieve_klines_simple(
-            "BTCUSDT",
+            &crypto_symbol,
             &CryptoInterval::Int5m,
             chrono::Duration::minutes(minutes).num_minutes(),
             0.75,

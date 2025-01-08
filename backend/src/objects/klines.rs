@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::intervals;
 use crate::binance::{self, klines};
-use crate::objects::indicators::Indicator;
+use crate::objects::{indicators::Indicator, objects::CryptoSymbol};
 
 // --- Klines --- //
 
@@ -44,7 +44,7 @@ impl Kline {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KlineCollection {
-    pub symbol: String,
+    pub symbol: CryptoSymbol,
     pub interval: intervals::CryptoInterval,
     pub training_percentage: f64,
     pub training: Vec<Kline>,
@@ -55,7 +55,7 @@ pub struct KlineCollection {
 impl KlineCollection {
     pub fn new() -> KlineCollection {
         KlineCollection {
-            symbol: String::new(),
+            symbol: CryptoSymbol::new(),
             interval: intervals::CryptoInterval::Int1m,
             training_percentage: 1.0,
             training: Vec::new(),
@@ -155,7 +155,7 @@ impl KlineCollection {
     pub fn display(&self) {
         println!(
             "{{Symbol: {}, Interval: {}, Training percentage: {}, Lengths: {},{},({}), Limit minutes: {}}}",
-            self.symbol,
+            self.symbol.symbol,
             self.interval.to_string(),
             self.training_percentage,
             self.training.len(),
@@ -175,7 +175,7 @@ impl KlineCollection {
 
     pub async fn retrieve_klines_simple(
         &mut self,
-        symbol: &str,
+        symbol: &CryptoSymbol,
         interval: &intervals::CryptoInterval,
         limit_minutes: i64,
         training_percentage: f64,
@@ -224,7 +224,14 @@ mod tests {
 
     fn create_test_collection() -> KlineCollection {
         let mut collection = KlineCollection::new();
-        collection.symbol = String::from("BTCUSDT");
+        collection.symbol = CryptoSymbol {
+            id: -1,
+            symbol: "BTCUSDT".to_string(),
+            name: "Bitcoin".to_string(),
+            volume: 100.0,
+            last_updated: Utc::now(),
+            available: true,
+        };
         collection.interval = intervals::CryptoInterval::Int1m;
         collection.training_percentage = 0.7;
 
@@ -265,7 +272,7 @@ mod tests {
     #[test]
     fn test_collection_new() {
         let collection = KlineCollection::new();
-        assert_eq!(collection.symbol, "");
+        assert_eq!(collection.symbol.symbol, "");
         assert_eq!(collection.training_percentage, 1.0);
         assert!(collection.training.is_empty());
         assert!(collection.validation.is_empty());

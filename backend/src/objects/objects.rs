@@ -19,6 +19,19 @@ pub struct CryptoSymbol {
     pub available: bool,
 }
 
+impl CryptoSymbol {
+    pub fn new() -> CryptoSymbol {
+        CryptoSymbol {
+            id: -1,
+            symbol: "".to_string(),
+            name: "".to_string(),
+            volume: -1.0,
+            last_updated: Utc::now(),
+            available: false,
+        }
+    }
+}
+
 // Simple version of the CryptoSymbol object
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CryptoSymbolSimple {

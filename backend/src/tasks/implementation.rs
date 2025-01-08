@@ -1,7 +1,11 @@
 use std::future::Future;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 use crate::interface::handlers::{crypto_lists, crypto_symbols, mh_objects};
+use crate::objects::klines::KlineCollection;
 use crate::objects::objects::{Task, TaskState};
 
 impl Task {
@@ -41,10 +45,56 @@ impl Task {
         println!("[TASK {:?}] CryptoList: {:?}", self.id, crypto_list);
         println!("[TASK {:?}] CryptoSymbols: {:?}", self.id, crypto_symbols);
 
-        let mut i: i64 = 0;
-        for _ in 0..i32::MAX {
-            i += 1;
+        if should_cancel.load(Ordering::Relaxed) {
+            return Err("Task was cancelled".to_string());
         }
+
+        // Parameters
+        let interval = &crypto_list.interval;
+        // let limit_minutes = crypto_list.limit_minutes;
+        // let training_percentage = crypto_list.training_percentage;
+        // let force_fetch = crypto_list.force_fetch;
+        let limit_minutes = 4000;
+        let training_percentage = 0.8;
+        let force_fetch = false;
+
+        // If limit_minutes is less than 10*interval, return err
+        if limit_minutes < 10 * interval.to_minutes() {
+            return Err("limit_minutes must be at least 10 times the interval".to_string());
+        }
+
+        // Kline Collections
+        let mut kline_collections: Vec<KlineCollection> = vec![];
+        kline_collections.reserve(crypto_symbols.len());
+        for crypto_symbol in crypto_symbols {
+            let mut kline_collection = KlineCollection::new();
+            match kline_collection
+                .retrieve_klines_simple(
+                    crypto_symbol,
+                    interval,
+                    limit_minutes,
+                    training_percentage,
+                    force_fetch,
+                )
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    println!(
+                        "[TASK {:?}] Error retrieving KlineCollection for {:?}: {:?}",
+                        self.id, crypto_symbol, e
+                    );
+                }
+            }
+
+            kline_collections.push(kline_collection);
+        }
+
+        // Dummy task
+        // let mut i: i64 = 0;
+        // for _ in 0..i32::MAX {
+        //     i += 1;
+        // }
 
         Ok("Task completed successfully".to_string())
     }
