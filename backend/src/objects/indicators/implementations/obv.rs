@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorTrait, OnBalanceVolume},
+    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, OnBalanceVolume},
     klines::KlineCollection,
 };
 
@@ -13,6 +13,20 @@ impl OnBalanceVolume {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "OnBalanceVolume".to_string(),
+            name: "On Balance Volume".to_string(),
+            description: "Calculates the On Balance Volume indicator".to_string(),
+            parameters: vec![IndicatorParameter {
+                name: "period".to_string(),
+                description: "The period of the On Balance Volume".to_string(),
+                r#type: "i32".to_string(),
+                default: "20".to_string(),
+            }],
         }
     }
 }

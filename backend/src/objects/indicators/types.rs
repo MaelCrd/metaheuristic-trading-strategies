@@ -1,3 +1,4 @@
+use serde::Serialize;
 use sqlx::postgres::PgRow;
 
 use crate::binance;
@@ -61,6 +62,36 @@ impl Indicator {
     ) -> Result<(), sqlx::Error> {
         binance::indicators::retrieve::retrieve_indicator(self, &kline_collection).await
     }
+
+    pub fn get_all_indicators_info() -> Vec<IndicatorInformation> {
+        vec![
+            MovingAverage::information(),
+            ExponentialMovingAverage::information(),
+            RelativeStrengthIndex::information(),
+            MovingAverageConvergenceDivergence::information(),
+            BollingerBands::information(),
+            FibonacciRetracement::information(),
+            StochasticOscillator::information(),
+            OnBalanceVolume::information(),
+            IchimokuCloud::information(),
+        ]
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct IndicatorParameter {
+    pub name: String,
+    pub description: String,
+    pub r#type: String,
+    pub default: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct IndicatorInformation {
+    pub struct_name: String,
+    pub name: String,
+    pub description: String,
+    pub parameters: Vec<IndicatorParameter>,
 }
 
 #[derive(Debug, Clone)]

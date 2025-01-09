@@ -3,7 +3,10 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorTrait, MovingAverageConvergenceDivergence},
+    indicators::{
+        IndicatorInformation, IndicatorParameter, IndicatorTrait,
+        MovingAverageConvergenceDivergence,
+    },
     klines::KlineCollection,
 };
 
@@ -21,6 +24,34 @@ impl MovingAverageConvergenceDivergence {
             signal_values: Vec::new(),
             histogram_values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "MovingAverageConvergenceDivergence".to_string(),
+            name: "MACD".to_string(),
+            description: "Moving Average Convergence Divergence".to_string(),
+            parameters: vec![
+                IndicatorParameter {
+                    name: "short_period".to_string(),
+                    description: "Short period for MACD".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "12".to_string(),
+                },
+                IndicatorParameter {
+                    name: "long_period".to_string(),
+                    description: "Long period for MACD".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "26".to_string(),
+                },
+                IndicatorParameter {
+                    name: "signal_period".to_string(),
+                    description: "Signal period for MACD".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "9".to_string(),
+                },
+            ],
         }
     }
 }

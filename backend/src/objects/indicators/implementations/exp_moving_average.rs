@@ -3,7 +3,9 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{ExponentialMovingAverage, IndicatorTrait},
+    indicators::{
+        ExponentialMovingAverage, IndicatorInformation, IndicatorParameter, IndicatorTrait,
+    },
     klines::KlineCollection,
 };
 
@@ -13,6 +15,20 @@ impl ExponentialMovingAverage {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "ExponentialMovingAverage".to_string(),
+            name: "Exponential Moving Average".to_string(),
+            description: "Exponential Moving Average".to_string(),
+            parameters: vec![IndicatorParameter {
+                name: "Period".to_string(),
+                description: "The number of periods to use in the calculation.".to_string(),
+                r#type: "i32".to_string(),
+                default: "20".to_string(),
+            }],
         }
     }
 }

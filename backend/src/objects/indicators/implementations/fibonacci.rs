@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{FibonacciRetracement, IndicatorTrait},
+    indicators::{FibonacciRetracement, IndicatorInformation, IndicatorParameter, IndicatorTrait},
     klines::KlineCollection,
 };
 
@@ -13,6 +13,20 @@ impl FibonacciRetracement {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "FibonacciRetracement".to_string(),
+            name: "Fibonacci Retracement".to_string(),
+            description: "Fibonacci Retracement".to_string(),
+            parameters: vec![IndicatorParameter {
+                name: "Period".to_string(),
+                description: "Period".to_string(),
+                r#type: "i32".to_string(),
+                default: "14".to_string(),
+            }],
         }
     }
 }

@@ -26,5 +26,7 @@ pub fn get_routes() -> Vec<Route> {
         tasks::create_task,
         tasks::queue_task,
         tasks::cancel_task,
+        // Indicators
+        indicators::get_indicators,
     ]
 }

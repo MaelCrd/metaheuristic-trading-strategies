@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorTrait, RelativeStrengthIndex},
+    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, RelativeStrengthIndex},
     klines::KlineCollection,
 };
 
@@ -13,6 +13,20 @@ impl RelativeStrengthIndex {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "RelativeStrengthIndex".to_string(),
+            name: "Relative Strength Index".to_string(),
+            description: "Calculates the Relative Strength Index indicator".to_string(),
+            parameters: vec![IndicatorParameter {
+                name: "period".to_string(),
+                description: "The period of the Relative Strength Index".to_string(),
+                r#type: "i32".to_string(),
+                default: "14".to_string(),
+            }],
         }
     }
 }

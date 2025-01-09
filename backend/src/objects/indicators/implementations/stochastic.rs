@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorTrait, StochasticOscillator},
+    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, StochasticOscillator},
     klines::KlineCollection,
 };
 
@@ -15,6 +15,28 @@ impl StochasticOscillator {
             k_values: Vec::new(),
             d_values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "StochasticOscillator".to_string(),
+            name: "Stochastic Oscillator".to_string(),
+            description: "Calculates the Stochastic Oscillator indicator".to_string(),
+            parameters: vec![
+                IndicatorParameter {
+                    name: "k_period".to_string(),
+                    description: "The period of the K line".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "14".to_string(),
+                },
+                IndicatorParameter {
+                    name: "d_period".to_string(),
+                    description: "The period of the D line".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "3".to_string(),
+                },
+            ],
         }
     }
 }

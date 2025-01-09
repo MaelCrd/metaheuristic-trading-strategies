@@ -1,10 +1,9 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
-use crate::binance;
 use crate::objects::{
     criteria::Criterion,
-    indicators::{BollingerBands, IndicatorTrait},
+    indicators::{BollingerBands, IndicatorInformation, IndicatorParameter, IndicatorTrait},
     klines::KlineCollection,
 };
 
@@ -17,6 +16,30 @@ impl BollingerBands {
             middle_band_values: Vec::new(),
             lower_band_values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "BollingerBands".to_string(),
+            name: "Bollinger Bands".to_string(),
+            description: format!(
+                "Bollinger Bands (BB) is a volatility indicator that consists of a middle band being an N-period simple moving average (SMA), an upper band at K times an N-period standard deviation above the middle band, and a lower band at K times an N-period standard deviation below the middle band."
+            ),
+            parameters: vec![
+                IndicatorParameter {
+                    name: "period".to_string(),
+                    description: "The number of periods to use in the calculation.".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "20".to_string(),
+                },
+                IndicatorParameter {
+                    name: "deviation".to_string(),
+                    description: "The number of standard deviations to use in the calculation.".to_string(),
+                    r#type: "f64".to_string(),
+                    default: "2.0".to_string(),
+                },
+            ],
         }
     }
 }

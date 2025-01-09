@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::{CompareCriterion, Criterion, CrossCriterion},
-    indicators::{IndicatorTrait, MovingAverage},
+    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, MovingAverage},
     klines::KlineCollection,
 };
 
@@ -13,6 +13,20 @@ impl MovingAverage {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "MovingAverage".to_string(),
+            name: "Moving Average".to_string(),
+            description: "Calculates the moving average of the close prices".to_string(),
+            parameters: vec![IndicatorParameter {
+                name: "period".to_string(),
+                description: "The period of the moving average".to_string(),
+                r#type: "i32".to_string(),
+                default: "20".to_string(),
+            }],
         }
     }
 }

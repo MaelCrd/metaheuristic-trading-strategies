@@ -3,7 +3,7 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IchimokuCloud, IndicatorTrait},
+    indicators::{IchimokuCloud, IndicatorInformation, IndicatorParameter, IndicatorTrait},
     klines::KlineCollection,
 };
 
@@ -19,6 +19,34 @@ impl IchimokuCloud {
             leading_span_a_values: Vec::new(),
             leading_span_b_values: Vec::new(),
             criteria: Vec::new(),
+        }
+    }
+
+    pub fn information() -> IndicatorInformation {
+        IndicatorInformation {
+            struct_name: "IchimokuCloud".to_string(),
+            name: "Ichimoku Cloud".to_string(),
+            description: "Ichimoku Cloud indicator".to_string(),
+            parameters: vec![
+                IndicatorParameter {
+                    name: "Conversion Period".to_string(),
+                    description: "The period for the conversion line".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "9".to_string(),
+                },
+                IndicatorParameter {
+                    name: "Base Period".to_string(),
+                    description: "The period for the base line".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "26".to_string(),
+                },
+                IndicatorParameter {
+                    name: "Lagging Span".to_string(),
+                    description: "The period for the lagging span".to_string(),
+                    r#type: "i32".to_string(),
+                    default: "52".to_string(),
+                },
+            ],
         }
     }
 }
