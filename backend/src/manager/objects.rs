@@ -1,12 +1,24 @@
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
-pub struct TasksProcessor {
+// Structure to hold thread status information
+#[derive(Debug, Clone)]
+pub struct ThreadStatus {
+    pub is_complete: bool,
+    pub success: bool,
+    pub start_time: Instant,
+    pub duration: Duration,
+    pub result: String,
+}
+
+// Structure to hold task lists for the task manager
+pub struct TaskLists {
     pending_tasks: Arc<Mutex<Vec<i32>>>,
     cancelling_tasks: Arc<Mutex<Vec<i32>>>,
     running_tasks: Arc<Mutex<Vec<i32>>>,
 }
 
-impl TasksProcessor {
+impl TaskLists {
     pub fn new() -> Self {
         Self {
             pending_tasks: Arc::new(Mutex::new(Vec::<i32>::new())),

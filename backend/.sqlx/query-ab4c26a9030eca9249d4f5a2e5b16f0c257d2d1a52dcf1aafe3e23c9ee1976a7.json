@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO crypto_list (name, interval, type)\n        VALUES ($1, $2, $3)\n        RETURNING id\n        ",
+  "query": "\n        INSERT INTO crypto_list (name, interval, limit_count, type)\n        VALUES ($1, $2, $3, $4)\n        RETURNING id\n        ",
   "describe": {
     "columns": [
       {
@@ -35,6 +35,7 @@
             }
           }
         },
+        "Int4",
         "Varchar"
       ]
     },
@@ -42,5 +43,5 @@
       false
     ]
   },
-  "hash": "9d15dcf00292140b6cce12fda01fa9fc2fb219f87adf5d8ff72c3694e6100630"
+  "hash": "ab4c26a9030eca9249d4f5a2e5b16f0c257d2d1a52dcf1aafe3e23c9ee1976a7"
 }

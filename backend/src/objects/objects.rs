@@ -84,14 +84,27 @@ pub struct CryptoListXCryptoSymbol {
 pub struct MHObject {
     pub id: i32,
     pub hidden: bool,
+    pub mh_algorithm_id: i32,
     pub mh_parameters: String,
     pub other_parameters: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateMHObject {
+    pub mh_algorithm_id: i32,
     pub mh_parameters: String,
     pub other_parameters: Option<String>,
+}
+
+// --- MH Algorithms --- //
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MHAlgorithm {
+    pub id: i32,
+    pub name: String,
+    pub version: String,
+    pub hidden: bool,
+    pub parameters: String,
 }
 
 // --- Results --- //

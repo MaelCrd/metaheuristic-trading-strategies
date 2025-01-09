@@ -4,8 +4,8 @@ use std::sync::{
 };
 
 use crate::interface::handlers::{crypto_lists, crypto_symbols, mh_objects};
-use crate::objects::klines::KlineCollection;
-use crate::objects::objects::Task;
+use crate::metaheuristic::mh;
+use crate::objects::{klines::KlineCollection, objects::Task};
 
 const FORCE_FETCH_DEFAULT: bool = false;
 const TRAINING_PERCENTAGE_DEFAULT: f64 = 0.8;
@@ -25,20 +25,27 @@ impl Task {
             serde_json::from_str(&self.other_parameters.clone().unwrap_or("{}".to_string()))
                 .unwrap();
 
+        // MH Object
         let mh_object = mh_objects::get_mh_objects(&pool_state, Some(mh_object_id.to_string()))
             .await
-            .into_inner();
+            .into_inner()
+            .into_iter()
+            .next()
+            .unwrap();
+        // let mh_object_parameters: serde_json::Value =
+        //     serde_json::from_str(&mh_object.mh_parameters).unwrap();
 
-        let mh_object = mh_object.first().unwrap();
-
+        // Crypto List
         let crypto_list =
             crypto_lists::get_crypto_lists(&pool_state, Some(crypto_list_id.to_string()))
                 .await
                 .unwrap()
-                .into_inner();
+                .into_inner()
+                .into_iter()
+                .next()
+                .unwrap();
 
-        let crypto_list = crypto_list.first().unwrap();
-
+        // Crypto Symbols
         let crypto_symbols = crypto_symbols::get_crypto_symbols(&pool_state)
             .await
             .into_inner()
@@ -104,6 +111,13 @@ impl Task {
 
             kline_collections.push(kline_collection);
         }
+
+        // MHObject evaluation
+        //
+        println!(
+            "[TASK {:?}] Evaluating MHObject (mh algorithm id : {})",
+            self.id, mh_object.mh_algorithm_id
+        );
 
         // Dummy task
         // let mut i: i64 = 0;

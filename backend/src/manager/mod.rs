@@ -1,4 +1,3 @@
 mod manager;
-mod processor;
-mod threads;
+mod objects;
 pub use manager::TaskManager;

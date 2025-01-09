@@ -9,12 +9,12 @@ use std::sync::{
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::{processor::TasksProcessor, threads::ThreadStatus};
+use super::objects::{TaskLists, ThreadStatus};
 use crate::{interface::handlers::tasks, objects::objects::TaskState};
 
 pub struct TaskManager {
     pub pool: Pool<Postgres>,
-    tasks_processor: TasksProcessor,
+    tasks_processor: TaskLists,
     statuses: Arc<Mutex<HashMap<i32, ThreadStatus>>>,
     cancel_flags: Arc<Mutex<HashMap<i32, Arc<AtomicBool>>>>,
     max_threads: usize,
@@ -24,7 +24,7 @@ impl TaskManager {
     pub fn new_with_pool(pool: Pool<Postgres>) -> Self {
         Self {
             pool,
-            tasks_processor: TasksProcessor::new(),
+            tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
             max_threads: 8,
@@ -38,7 +38,7 @@ impl TaskManager {
                 .connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
                 .await
                 .unwrap(),
-            tasks_processor: TasksProcessor::new(),
+            tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
             max_threads: 8,

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO mh_object (mh_algorithm_id, mh_parameters, other_parameters)\n        VALUES ($1, $2, $3)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b99d5ea72c100b4b91389d18e34397caa2bd0a8082533b64752c2f1d6f9d68e3"
+}

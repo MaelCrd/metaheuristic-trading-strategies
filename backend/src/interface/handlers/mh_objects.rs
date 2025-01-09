@@ -15,7 +15,7 @@ pub async fn get_mh_objects(pool: &State<PgPool>, id: Option<String>) -> Json<Ve
     let recs = sqlx::query(
         format!(
             r#"
-            SELECT id, hidden, mh_parameters, other_parameters
+            SELECT id, hidden, mh_algorithm_id, mh_parameters, other_parameters
             FROM mh_object {}
             "#,
             str_id
@@ -31,6 +31,7 @@ pub async fn get_mh_objects(pool: &State<PgPool>, id: Option<String>) -> Json<Ve
         .map(|row| MHObject {
             id: row.get("id"),
             hidden: row.get("hidden"),
+            mh_algorithm_id: row.get("mh_algorithm_id"),
             mh_parameters: row.get("mh_parameters"),
             other_parameters: row.get("other_parameters"),
         })
@@ -48,9 +49,10 @@ pub async fn create_mh_object(
     // Insert the new MHObject
     sqlx::query!(
         r#"
-        INSERT INTO mh_object (mh_parameters, other_parameters)
-        VALUES ($1, $2)
+        INSERT INTO mh_object (mh_algorithm_id, mh_parameters, other_parameters)
+        VALUES ($1, $2, $3)
         "#,
+        mh_object.mh_algorithm_id,
         mh_object.mh_parameters,
         mh_object.other_parameters,
     )
