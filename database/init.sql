@@ -61,10 +61,27 @@ CREATE TABLE IF NOT EXISTS task (
     other_parameters TEXT,
     mh_object_id INTEGER,
     crypto_list_id INTEGER,
+    indicator_combination_id INTEGER,
     result_id INTEGER,
     FOREIGN KEY (mh_object_id) REFERENCES mh_object(id),
     FOREIGN KEY (crypto_list_id) REFERENCES crypto_list(id),
     FOREIGN KEY (result_id) REFERENCES result(id)
+);
+
+-- Create indicator combination Table
+CREATE TABLE IF NOT EXISTS indicator_combination (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    hidden BOOLEAN DEFAULT FALSE NOT NULL
+);
+
+-- Create indicator in combination Table
+CREATE TABLE IF NOT EXISTS indicator_in_combination (
+    indicator_combination_id INTEGER NOT NULL,
+    indicator_struct_name TEXT NOT NULL,
+    parameters TEXT,
+    PRIMARY KEY (indicator_combination_id, indicator_struct_name),
+    FOREIGN KEY (indicator_combination_id) REFERENCES indicator_combination(id)
 );
 
 -- Create mh_algorithm Table
