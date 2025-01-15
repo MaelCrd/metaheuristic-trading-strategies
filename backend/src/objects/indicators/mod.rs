@@ -1,3 +1,4 @@
+mod combination;
 mod implementations;
 mod types;
 
@@ -5,6 +6,7 @@ mod types;
 mod tests;
 
 // pub use implementations::*;
+pub use combination::*;
 use sqlx::postgres::PgRow;
 pub use types::*;
 

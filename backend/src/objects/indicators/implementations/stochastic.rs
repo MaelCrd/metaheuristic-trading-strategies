@@ -27,13 +27,13 @@ impl StochasticOscillator {
                 IndicatorParameter {
                     name: "k_period".to_string(),
                     description: "The period of the K line".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "14".to_string(),
                 },
                 IndicatorParameter {
                     name: "d_period".to_string(),
                     description: "The period of the D line".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "3".to_string(),
                 },
             ],

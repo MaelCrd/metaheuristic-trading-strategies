@@ -16,7 +16,7 @@ pub async fn get_tasks(
         let id = id.parse::<i32>().unwrap();
         let recs = sqlx::query!(
             r#"
-            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
+            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, indicator_combination_id, result_id
             FROM task
             WHERE id = $1
             "#,
@@ -41,6 +41,7 @@ pub async fn get_tasks(
                 other_parameters: row.other_parameters,
                 mh_object_id: row.mh_object_id,
                 crypto_list_id: row.crypto_list_id,
+                indicator_combination_id: row.indicator_combination_id,
                 result_id: row.result_id,
             })
             .collect();
@@ -50,7 +51,7 @@ pub async fn get_tasks(
     } else {
         let recs = sqlx::query!(
             r#"
-            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id
+            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, indicator_combination_id, result_id
             FROM task
             "#,
         )
@@ -67,6 +68,7 @@ pub async fn get_tasks(
                 other_parameters: row.other_parameters,
                 mh_object_id: row.mh_object_id,
                 crypto_list_id: row.crypto_list_id,
+                indicator_combination_id: row.indicator_combination_id,
                 result_id: row.result_id,
             })
             .collect();
@@ -85,20 +87,26 @@ pub async fn create_task(
 ) -> Result<Json<Vec<Task>>, rocket::http::Status> {
     let res = sqlx::query!(
         r#"
-        INSERT INTO task (other_parameters, mh_object_id, crypto_list_id)
-        VALUES ($1, $2, $3)
+        INSERT INTO task (other_parameters, mh_object_id, crypto_list_id, indicator_combination_id)
+        VALUES ($1, $2, $3, $4)
         RETURNING id
         "#,
         task.other_parameters,
         task.mh_object_id,
-        task.crypto_list_id
+        task.crypto_list_id,
+        task.indicator_combination_id
     )
     .fetch_all(&**pool)
-    .await
-    .unwrap();
+    .await;
+
+    if res.is_err() {
+        println!("Task creation failed: {:?}", res.err());
+        return Err(rocket::http::Status::InternalServerError);
+    }
+    let res_unwrapped = res.unwrap();
 
     if queue.unwrap_or(false) {
-        let id = res[0].id;
+        let id = res_unwrapped[0].id;
 
         queue_task(pool, id).await.unwrap();
 

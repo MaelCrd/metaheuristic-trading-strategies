@@ -24,7 +24,7 @@ impl MovingAverage {
             parameters: vec![IndicatorParameter {
                 name: "period".to_string(),
                 description: "The period of the moving average".to_string(),
-                r#type: "i32".to_string(),
+                r#type: "integer".to_string(),
                 default: "20".to_string(),
             }],
         }

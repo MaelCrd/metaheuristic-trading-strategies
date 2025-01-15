@@ -154,6 +154,7 @@ pub struct Task {
     pub other_parameters: Option<String>,
     pub mh_object_id: Option<i32>,
     pub crypto_list_id: Option<i32>,
+    pub indicator_combination_id: Option<i32>,
     pub result_id: Option<i32>,
 }
 
@@ -166,6 +167,7 @@ impl Task {
             other_parameters: None,
             mh_object_id: None,
             crypto_list_id: None,
+            indicator_combination_id: None,
             result_id: None,
         }
     }
@@ -193,6 +195,7 @@ pub struct CreateTask {
     pub other_parameters: Option<String>,
     pub mh_object_id: i32,
     pub crypto_list_id: i32,
+    pub indicator_combination_id: i32,
 }
 
 // --- Other Objects --- //

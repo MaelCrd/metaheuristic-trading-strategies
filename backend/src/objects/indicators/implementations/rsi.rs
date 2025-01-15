@@ -24,7 +24,7 @@ impl RelativeStrengthIndex {
             parameters: vec![IndicatorParameter {
                 name: "period".to_string(),
                 description: "The period of the Relative Strength Index".to_string(),
-                r#type: "i32".to_string(),
+                r#type: "integer".to_string(),
                 default: "14".to_string(),
             }],
         }

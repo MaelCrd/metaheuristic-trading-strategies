@@ -36,19 +36,19 @@ impl MovingAverageConvergenceDivergence {
                 IndicatorParameter {
                     name: "short_period".to_string(),
                     description: "Short period for MACD".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "12".to_string(),
                 },
                 IndicatorParameter {
                     name: "long_period".to_string(),
                     description: "Long period for MACD".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "26".to_string(),
                 },
                 IndicatorParameter {
                     name: "signal_period".to_string(),
                     description: "Signal period for MACD".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "9".to_string(),
                 },
             ],

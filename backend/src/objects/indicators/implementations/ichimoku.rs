@@ -31,19 +31,19 @@ impl IchimokuCloud {
                 IndicatorParameter {
                     name: "Conversion Period".to_string(),
                     description: "The period for the conversion line".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "9".to_string(),
                 },
                 IndicatorParameter {
                     name: "Base Period".to_string(),
                     description: "The period for the base line".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "26".to_string(),
                 },
                 IndicatorParameter {
                     name: "Lagging Span".to_string(),
                     description: "The period for the lagging span".to_string(),
-                    r#type: "i32".to_string(),
+                    r#type: "integer".to_string(),
                     default: "52".to_string(),
                 },
             ],

@@ -26,7 +26,7 @@ impl ExponentialMovingAverage {
             parameters: vec![IndicatorParameter {
                 name: "Period".to_string(),
                 description: "The number of periods to use in the calculation.".to_string(),
-                r#type: "i32".to_string(),
+                r#type: "integer".to_string(),
                 default: "20".to_string(),
             }],
         }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, result_id\n            FROM task\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT id, state::TEXT as state, created_at, other_parameters, mh_object_id, crypto_list_id, indicator_combination_id, result_id\n            FROM task\n            ",
   "describe": {
     "columns": [
       {
@@ -35,14 +35,17 @@
       },
       {
         "ordinal": 6,
+        "name": "indicator_combination_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
         "name": "result_id",
         "type_info": "Int4"
       }
     ],
     "parameters": {
-      "Left": [
-        "Int4"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -51,8 +54,9 @@
       true,
       true,
       true,
+      true,
       true
     ]
   },
-  "hash": "4b692d7295a442181b971eb555e96d50dcaed7d434237a5d10990b5194dec291"
+  "hash": "196bbb592a2b49e98e09c2754d5df93e4258923a1ab2685cf42e2e5ea708ea0b"
 }

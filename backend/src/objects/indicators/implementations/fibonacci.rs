@@ -24,7 +24,7 @@ impl FibonacciRetracement {
             parameters: vec![IndicatorParameter {
                 name: "Period".to_string(),
                 description: "Period".to_string(),
-                r#type: "i32".to_string(),
+                r#type: "integer".to_string(),
                 default: "14".to_string(),
             }],
         }

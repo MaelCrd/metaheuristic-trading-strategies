@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO task (other_parameters, mh_object_id, crypto_list_id)\n        VALUES ($1, $2, $3)\n        RETURNING id\n        ",
+  "query": "\n        INSERT INTO task (other_parameters, mh_object_id, crypto_list_id, indicator_combination_id)\n        VALUES ($1, $2, $3, $4)\n        RETURNING id\n        ",
   "describe": {
     "columns": [
       {
@@ -13,6 +13,7 @@
       "Left": [
         "Text",
         "Int4",
+        "Int4",
         "Int4"
       ]
     },
@@ -20,5 +21,5 @@
       false
     ]
   },
-  "hash": "7e96931fabe71e835a9d3547bf3d7ea9cffd23f57f9e506bd2fbe71a88a056e4"
+  "hash": "d656a4f7c79d3ab3e6cad49d66e71c71ed9ddc40613195e751db6e92d85e09bf"
 }

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                DELETE FROM indicator_combination\n                WHERE id = $1\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ba4575a7ccee945b846f759536cf900ff100d1139f258ca51ef8668da5668e3e"
+}

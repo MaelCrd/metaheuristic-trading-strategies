@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO indicator_combination (name, hidden)\n        VALUES ($1, $2)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b080e71bd16f6ab95586282989142fb41b736186eff58bdc138f2dc8c6de394e"
+}
