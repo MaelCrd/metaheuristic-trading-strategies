@@ -12,6 +12,8 @@ use std::time::{Duration, Instant};
 use super::objects::{TaskLists, ThreadStatus};
 use crate::{interface::handlers::tasks, objects::objects::TaskState};
 
+const MAX_THREADS_DEFAULT: usize = 1;
+
 pub struct TaskManager {
     pub pool: Pool<Postgres>,
     tasks_processor: TaskLists,
@@ -27,7 +29,7 @@ impl TaskManager {
             tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
-            max_threads: 8,
+            max_threads: MAX_THREADS_DEFAULT,
         }
     }
 
@@ -41,7 +43,7 @@ impl TaskManager {
             tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
-            max_threads: 8,
+            max_threads: MAX_THREADS_DEFAULT,
         }
     }
 

@@ -4,8 +4,8 @@ use std::sync::{
 };
 
 use crate::interface::handlers;
-use crate::metaheuristic::mh;
 use crate::objects::{indicators, klines::KlineCollection, objects::Task};
+use crate::strategy;
 
 const FORCE_FETCH_DEFAULT: bool = false;
 const TRAINING_PERCENTAGE_DEFAULT: f64 = 0.8;
@@ -163,8 +163,6 @@ impl Task {
             kline_collections.push(kline_collection);
         }
 
-        println!("[TASK {:?}] Indicators: {:?}", self.id, indicators);
-
         //
 
         // MHObject evaluation
@@ -173,6 +171,16 @@ impl Task {
             "[TASK {:?}] Evaluating MHObject (mh algorithm name : {})",
             self.id, mh_object.mh_algorithm_name
         );
+
+        let result = strategy::evaluate(&kline_collections, &indicators, &mh_object);
+        match result {
+            Ok(_) => {
+                println!("[TASK {:?}] MHObject evaluated successfully", self.id);
+            }
+            Err(e) => {
+                println!("[TASK {:?}] Error evaluating MHObject: {:?}", self.id, e);
+            }
+        }
 
         // Dummy task
         // let mut i: i64 = 0;

@@ -20,7 +20,7 @@ use backend::interface::rocket;
 // use backend::utils::loading;
 use backend::binance;
 use backend::manager;
-use backend::metaheuristic::mh;
+// use backend::metaheuristic::mh;
 
 #[tokio::main]
 async fn main() {

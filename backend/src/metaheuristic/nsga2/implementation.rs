@@ -2,13 +2,17 @@ use rand::prelude::*;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use super::super::objects::{MetaheuristicTrait, Solution, Variable, VariableDefinition};
+use crate::metaheuristic::objects::{
+    MetaheuristicInfo, MetaheuristicTrait, Solution, Variable, VariableDefinition,
+    VariableDefinitionInfo,
+};
 
 // Parallelize the NSGA-II algorithm using Rayon
 use rayon::prelude::*;
 // use std::sync::Arc;
 
 /// The main NSGA-II algorithm implementation
+#[derive(Clone, Debug)]
 pub struct NSGAII {
     population_size: usize,
     variable_definitions: Vec<VariableDefinition>,
@@ -31,6 +35,39 @@ impl NSGAII {
             num_objectives,
             mutation_rate,
             crossover_rate,
+        }
+    }
+
+    pub fn get_info() -> MetaheuristicInfo {
+        MetaheuristicInfo {
+            name: "NSGA-II".to_string(),
+            description: "Non-dominated Sorting Genetic Algorithm II".to_string(),
+            parameters: vec![
+                VariableDefinitionInfo {
+                    name: "population_size".to_string(),
+                    description: "Number of solutions in the population".to_string(),
+                    variable_type: "integer".to_string(),
+                    bounds: Some((1.0, f64::INFINITY)),
+                },
+                VariableDefinitionInfo {
+                    name: "num_objectives".to_string(),
+                    description: "Number of objectives to optimize".to_string(),
+                    variable_type: "integer".to_string(),
+                    bounds: Some((1.0, f64::INFINITY)),
+                },
+                VariableDefinitionInfo {
+                    name: "mutation_rate".to_string(),
+                    description: "Probability of mutation for each variable".to_string(),
+                    variable_type: "float".to_string(),
+                    bounds: Some((0.0, 1.0)),
+                },
+                VariableDefinitionInfo {
+                    name: "crossover_rate".to_string(),
+                    description: "Probability of crossover for each pair of parents".to_string(),
+                    variable_type: "float".to_string(),
+                    bounds: Some((0.0, 1.0)),
+                },
+            ],
         }
     }
 

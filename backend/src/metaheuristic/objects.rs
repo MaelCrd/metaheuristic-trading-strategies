@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::nsga2::NSGAII;
 
 /// Represents a variable in the optimization problem
@@ -56,8 +58,30 @@ impl Solution {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct VariableDefinitionInfo {
+    pub name: String,
+    pub description: String,
+    pub variable_type: String,
+    pub bounds: Option<(f64, f64)>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MetaheuristicInfo {
+    pub name: String,
+    pub description: String,
+    pub parameters: Vec<VariableDefinitionInfo>,
+}
+
+#[derive(Clone, Debug)]
 pub enum Metaheuristic {
     NSGAII(NSGAII),
+}
+
+impl Metaheuristic {
+    pub fn get_all_info() -> Vec<MetaheuristicInfo> {
+        vec![NSGAII::get_info()]
+    }
 }
 
 pub trait MetaheuristicTrait {
