@@ -14,7 +14,7 @@ static STR_TODO: Lazy<String> = Lazy::new(|| format!("━"));
 pub fn print_loading_progress(progress: i32, total: i32) {
     let i = (progress * 40) / (if total != 0 { total } else { 1 });
     print!(
-        "\r{}Loading... {}{} ",
+        "{}Loading... {}{} \r",
         TEXT_COLOR,
         (0..40)
             .map(|j| if j > i + 1 {

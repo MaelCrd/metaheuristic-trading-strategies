@@ -170,8 +170,8 @@ impl Task {
         // MHObject evaluation
         //
         println!(
-            "[TASK {:?}] Evaluating MHObject (mh algorithm id : {})",
-            self.id, mh_object.mh_algorithm_id
+            "[TASK {:?}] Evaluating MHObject (mh algorithm name : {})",
+            self.id, mh_object.mh_algorithm_name
         );
 
         // Dummy task
