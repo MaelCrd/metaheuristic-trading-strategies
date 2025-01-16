@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO indicator_in_combination (indicator_combination_id, indicator_struct_name, parameters)\n            VALUES ($1, $2, $3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ebb295e2935d171db945bc70f7cf4f69976e66fd7efcef83025c05a44bd9b811"
+}
