@@ -28,6 +28,7 @@ pub fn get_routes() -> Vec<Route> {
         tasks::cancel_task,
         // Indicators
         indicators::get_indicators,
+        indicators::get_indicators_in_combination,
         indicators::get_indicator_combinations,
         indicators::create_indicator_combination,
     ]

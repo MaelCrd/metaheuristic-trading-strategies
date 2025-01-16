@@ -2,8 +2,9 @@ use rocket::serde::json::Json;
 use rocket::State;
 use rocket::{get, post};
 use sqlx::PgPool;
+use sqlx::Row;
 
-use crate::objects::indicators::{self, IndicatorInformation};
+use crate::objects::indicators::{self, CreateIndicatorInCombination, IndicatorInformation};
 
 // Define a route to get all Indicators
 #[get("/indicators")]
@@ -11,17 +12,65 @@ pub async fn get_indicators() -> Json<Vec<IndicatorInformation>> {
     Json(indicators::Indicator::get_all_indicators_info())
 }
 
+// Define a route to get indicators information for a specific indicator combination
+#[get("/indicators_in_combination?<id>")]
+pub async fn get_indicators_in_combination(
+    pool: &State<PgPool>,
+    id: String,
+) -> Json<Vec<indicators::IndicatorInCombination>> {
+    // Get all the indicators in the indicator combination
+    let indicators_in_combination = sqlx::query(
+        format!(
+            r#"
+            SELECT indicator_combination_id, indicator_struct_name, parameters
+            FROM indicator_in_combination
+            WHERE indicator_combination_id = {}
+            "#,
+            id
+        )
+        .as_str(),
+    )
+    .fetch_all(&**pool)
+    .await
+    .unwrap();
+
+    // Convert the records to IndicatorInformation objects
+    let indicators_in_combination: Vec<indicators::IndicatorInCombination> =
+        futures::future::join_all(indicators_in_combination.into_iter().map(|row| async move {
+            indicators::IndicatorInCombination {
+                indicator_combination_id: row.get("indicator_combination_id"),
+                indicator_struct_name: row.get("indicator_struct_name"),
+                parameters: row.get("parameters"),
+            }
+        }))
+        .await;
+
+    Json(indicators_in_combination)
+}
+
 // Define a route to get all indicator combinations
-#[get("/indicator_combinations")]
+#[get("/indicator_combinations?<id>")]
 pub async fn get_indicator_combinations(
     pool: &State<PgPool>,
+    id: Option<String>,
 ) -> Json<Vec<indicators::CompleteIndicatorCombination>> {
+    // If an id is provided, get the indicator combination with that id
+    let request_addition = if let Some(id) = id {
+        format!("WHERE id = {}", id)
+    } else {
+        "".to_string()
+    };
+
     // Get all the indicator combinations
-    let indicator_combinations = sqlx::query!(
-        r#"
+    let indicator_combinations = sqlx::query(
+        format!(
+            r#"
         SELECT id, name, hidden
-        FROM indicator_combination
+        FROM indicator_combination {}
         "#,
+            request_addition
+        )
+        .as_str(),
     )
     .fetch_all(&**pool)
     .await
@@ -36,7 +85,7 @@ pub async fn get_indicator_combinations(
                 FROM indicator_in_combination
                 WHERE indicator_combination_id = $1
                 "#,
-                row.id,
+                row.get::<i32, _>("id"),
             )
             .fetch_all(&**pool)
             .await
@@ -46,10 +95,10 @@ pub async fn get_indicator_combinations(
             .collect();
 
             indicators::CompleteIndicatorCombination {
-                id: row.id,
-                name: row.name,
+                id: row.get("id"),
+                name: row.get("name"),
                 indicators_struct_names,
-                hidden: row.hidden,
+                hidden: row.get("hidden"),
             }
         }))
         .await;
@@ -62,7 +111,7 @@ pub async fn get_indicator_combinations(
 pub async fn create_indicator_combination(
     pool: &State<PgPool>,
     create_indicator_combination: Json<indicators::CreateIndicatorCombination>,
-) -> Json<Vec<indicators::CompleteIndicatorCombination>> {
+) -> Result<Json<Vec<indicators::CompleteIndicatorCombination>>, rocket::http::Status> {
     // Send the request
     let res = sqlx::query!(
         r#"
@@ -81,14 +130,18 @@ pub async fn create_indicator_combination(
     let indicator_combination_id = res.id;
 
     // Link the indicators to the new indicator combination using the indicator_combination_x_indicator table
-    for indicator_struct_name in create_indicator_combination.indicators_struct_names.iter() {
+    for indicator in create_indicator_combination.indicators.iter() {
+        println!("Indicator: {}", indicator);
+        let indicator_info =
+            serde_json::from_str::<CreateIndicatorInCombination>(indicator.as_str()).unwrap();
         let result = sqlx::query!(
             r#"
-            INSERT INTO indicator_in_combination (indicator_combination_id, indicator_struct_name)
-            VALUES ($1, $2)
+            INSERT INTO indicator_in_combination (indicator_combination_id, indicator_struct_name, parameters)
+            VALUES ($1, $2, $3)
             "#,
             indicator_combination_id,
-            indicator_struct_name,
+            indicator_info.indicator_struct_name,
+            indicator_info.parameters,
         )
         .execute(&**pool)
         .await;
@@ -124,9 +177,9 @@ pub async fn create_indicator_combination(
             .unwrap();
 
             // Return an internal server error
-            return get_indicator_combinations(pool).await;
+            return Err(rocket::http::Status::InternalServerError);
         }
     }
 
-    get_indicator_combinations(pool).await
+    Ok(get_indicator_combinations(pool, None).await)
 }

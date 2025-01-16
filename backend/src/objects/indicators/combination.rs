@@ -1,5 +1,18 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndicatorInCombination {
+    pub indicator_combination_id: i32,
+    pub indicator_struct_name: String,
+    pub parameters: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateIndicatorInCombination {
+    pub indicator_struct_name: String,
+    pub parameters: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct IndicatorCombination {
     pub id: i32,
@@ -18,5 +31,5 @@ pub struct CompleteIndicatorCombination {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateIndicatorCombination {
     pub name: String,
-    pub indicators_struct_names: Vec<String>,
+    pub indicators: Vec<String>,
 }

@@ -76,6 +76,119 @@ impl Indicator {
             IchimokuCloud::information(),
         ]
     }
+
+    pub fn new_from_struct_name(
+        struct_name: &String,
+        json_parameters: &serde_json::Value,
+    ) -> Option<Indicator> {
+        match struct_name.as_str() {
+            "MovingAverage" => {
+                let period = json_parameters.get("period");
+                if period.is_none() {
+                    return None;
+                };
+                Some(Indicator::MovingAverage(MovingAverage::new(
+                    period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                )))
+            }
+            "ExponentialMovingAverage" => {
+                let period = json_parameters.get("period");
+                if period.is_none() {
+                    return None;
+                };
+                Some(Indicator::ExponentialMovingAverage(
+                    ExponentialMovingAverage::new(
+                        period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    ),
+                ))
+            }
+            "RelativeStrengthIndex" => {
+                let period = json_parameters.get("period");
+                if period.is_none() {
+                    return None;
+                };
+                Some(Indicator::RelativeStrengthIndex(
+                    RelativeStrengthIndex::new(
+                        period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    ),
+                ))
+            }
+            "MovingAverageConvergenceDivergence" => {
+                let short_period = json_parameters.get("short_period");
+                let long_period = json_parameters.get("long_period");
+                let signal_period = json_parameters.get("signal_period");
+                if short_period.is_none() || long_period.is_none() || signal_period.is_none() {
+                    return None;
+                };
+                Some(Indicator::MovingAverageConvergenceDivergence(
+                    MovingAverageConvergenceDivergence::new(
+                        short_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                        long_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                        signal_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    ),
+                ))
+            }
+            "BollingerBands" => {
+                let period = json_parameters.get("period");
+                let deviation = json_parameters.get("deviation");
+                if period.is_none() || deviation.is_none() {
+                    return None;
+                };
+                Some(Indicator::BollingerBands(BollingerBands::new(
+                    period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    deviation.unwrap().as_f64().unwrap(),
+                )))
+            }
+            "FibonacciRetracement" => {
+                let period = json_parameters.get("period");
+                if period.is_none() {
+                    return None;
+                };
+                Some(Indicator::FibonacciRetracement(FibonacciRetracement::new(
+                    period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                )))
+            }
+            "StochasticOscillator" => {
+                let k_period = json_parameters.get("k_period");
+                let d_period = json_parameters.get("d_period");
+                if k_period.is_none() || d_period.is_none() {
+                    return None;
+                };
+                Some(Indicator::StochasticOscillator(StochasticOscillator::new(
+                    k_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    d_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                )))
+            }
+            "OnBalanceVolume" => {
+                let period = json_parameters.get("period");
+                if period.is_none() {
+                    return None;
+                };
+                Some(Indicator::OnBalanceVolume(OnBalanceVolume::new(
+                    period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                )))
+            }
+            "IchimokuCloud" => {
+                let conversion_period = json_parameters.get("conversion_period");
+                let base_period = json_parameters.get("base_period");
+                let lagging_span = json_parameters.get("lagging_span");
+                if conversion_period.is_none() || base_period.is_none() || lagging_span.is_none() {
+                    return None;
+                };
+                Some(Indicator::IchimokuCloud(IchimokuCloud::new(
+                    conversion_period
+                        .unwrap()
+                        .as_i64()
+                        .unwrap()
+                        .try_into()
+                        .unwrap(),
+                    base_period.unwrap().as_i64().unwrap().try_into().unwrap(),
+                    lagging_span.unwrap().as_i64().unwrap().try_into().unwrap(),
+                )))
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
