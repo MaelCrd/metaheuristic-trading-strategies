@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS crypto_list_x_crypto_symbol (
 CREATE TABLE IF NOT EXISTS mh_object (
     id SERIAL PRIMARY KEY,
     hidden BOOLEAN DEFAULT FALSE NOT NULL,
-    mh_algorithm_id INTEGER NOT NULL,
+    mh_algorithm_name TEXT NOT NULL,
     mh_parameters TEXT NOT NULL,
     other_parameters TEXT
 );
@@ -82,15 +82,6 @@ CREATE TABLE IF NOT EXISTS indicator_in_combination (
     parameters TEXT NOT NULL,
     PRIMARY KEY (indicator_combination_id, indicator_struct_name),
     FOREIGN KEY (indicator_combination_id) REFERENCES indicator_combination(id)
-);
-
--- Create mh_algorithm Table
-CREATE TABLE IF NOT EXISTS mh_algorithm (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    version VARCHAR(255) NOT NULL,
-    hidden BOOLEAN DEFAULT FALSE NOT NULL,
-    parameters TEXT
 );
 
 ---------------------------------------------------------------
@@ -162,9 +153,9 @@ ON cl.id = clxcs.crypto_list_id
 WHERE cl.name = 'Top 2';
 
 -- Insert data into mh_object Table
-INSERT INTO mh_object (mh_algorithm_id, mh_parameters, other_parameters)
-VALUES (1, '{"param1": "value1"}', '{"other_param1": "other_value1"}'),
-       (1, '{"param2": "value2"}', '{"other_param2": "other_value2"}');
+INSERT INTO mh_object (mh_algorithm_name, mh_parameters, other_parameters)
+VALUES ('mh_1', '{"param1": "value1"}', '{"other_param1": "other_value1"}'),
+       ('mh_2', '{"param2": "value2"}', '{"other_param2": "other_value2"}');
 
 -- Insert data into result Table
 INSERT INTO result (results, other_parameters)
@@ -202,11 +193,6 @@ WHERE t.crypto_list_id = 1;
 -- Show all crypto symbols
 SELECT *
 FROM crypto_symbol;
-
--- Create mh_algorithm elements
-INSERT INTO mh_algorithm (name, version, parameters)
-VALUES ('gtest0', '1.0', '{"param1": "value1"}'),
-       ('gtest1', '3.2', '{"param2": "value2"}');
 
 -- Show tables
 \dt
