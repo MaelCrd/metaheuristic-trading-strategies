@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
+    CryptoSymbols: typeof import('./components/CryptoSymbols.vue')['default']
     DataSender: typeof import('./components/MainPage.vue')['default']
     MainPage: typeof import('./components/MainPage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

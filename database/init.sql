@@ -77,10 +77,10 @@ CREATE TABLE IF NOT EXISTS indicator_combination (
 
 -- Create indicator in combination Table
 CREATE TABLE IF NOT EXISTS indicator_in_combination (
+    id SERIAL PRIMARY KEY,
     indicator_combination_id INTEGER NOT NULL,
     indicator_struct_name TEXT NOT NULL,
     parameters TEXT NOT NULL,
-    PRIMARY KEY (indicator_combination_id, indicator_struct_name),
     FOREIGN KEY (indicator_combination_id) REFERENCES indicator_combination(id)
 );
 
