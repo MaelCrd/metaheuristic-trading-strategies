@@ -5,22 +5,31 @@
                 <h3>Crypto lists</h3>
             </v-card-title>
             <div>
-                <v-btn variant="outlined" prepend-icon="mdi-plus" color="primary" @click="dialogCreate = true">
+                <v-btn variant="plain" :prepend-icon="showHiddenIcon" color="primary" @click="handleShowHidden">
+                    {{ showHidden ? 'Hide hidden' : 'Show hidden' }}
+                </v-btn>
+                <v-btn class="ml-4" variant="outlined" prepend-icon="mdi-plus" color="primary"
+                    @click="dialogCreate = true">
                     Create</v-btn>
             </div>
         </v-row>
         <v-row>
-            <v-data-table multi-sort :headers="headers" :items="items" class="pl-6 pr-6 pb-6">
-                <template v-slot:item.hidden="{ item }">
-                    <v-chip :color="item.hidden ? 'green' : 'red'" :text="item.hidden ? 'Hidden' : 'Visible'"
-                        class="text-uppercase" size="small" label>
-                    </v-chip>
+            <v-data-table multi-sort :headers="headers" :items="filteredItems" class="pl-6 pr-12 pb-6">
+                <template v-slot:item.name="{ item }">
+                    <span>{{ item.name }}</span>
+                    <v-chip v-if="item.hidden" color="warning" small class="ml-2">Hidden</v-chip>
+                </template>
+                <template v-slot:item.actions="{ item }">
+                    <v-btn icon @click="hideItem(item)">
+                        <v-icon v-if="item.hidden">mdi-eye-outline</v-icon>
+                        <v-icon v-else>mdi-eye-off-outline</v-icon>
+                    </v-btn>
                 </template>
             </v-data-table>
         </v-row>
 
         <!--  -->
-        <v-dialog v-model="dialogCreate" max-width="500px" opacity="0.1">
+        <v-dialog v-model="dialogCreate" max-width="500px" opacity="0" color="black">
             <v-card>
                 <v-card-title class="mt-3 ml-3">Create crypto list</v-card-title>
                 <v-card-text>
@@ -121,11 +130,14 @@
             return {
                 // Add your component data here
                 headers: [
-                    { title: 'Name', value: 'name' },
-                    { title: 'Interval', value: 'interval' },
-                    { title: 'Limit', value: 'limit_count' },
-                    { title: 'Type', value: 'type' },
+                    { title: 'Name', value: 'name', width: '30%' },
+                    { title: 'Interval', value: 'interval', width: '20%' },
+                    { title: 'Limit', value: 'limit_count', width: '20%' },
+                    { title: 'Type', value: 'type', width: '20%' },
+                    { title: 'Actions', value: 'actions', sortable: false, width: '10%' },
                 ],
+                showHidden: false,
+                showHiddenIcon: 'mdi-eye-off-outline',
                 dialogCreate: false,
                 dialogSelectSymbols: false,
                 headersSymbols: [
@@ -158,11 +170,33 @@
                 ],
             };
         },
+        computed: {
+            filteredItems() {
+                return this.showHidden ? this.items : this.items.filter(item => !item.hidden);
+            }
+        },
         mounted() {
             // Add your mounted logic here
         },
         methods: {
             // Add your component methods here
+            handleShowHidden() {
+                console.log('Show hidden');
+                this.showHidden = !this.showHidden;
+                this.showHiddenIcon = this.showHidden ? 'mdi-eye-outline' : 'mdi-eye-off-outline';
+            },
+            hideItem(item) {
+                console.log('Hide item');
+
+                axios.put(`http://localhost:9797/api/crypto_list?id=${item.id}&hidden=${!item.hidden}`)
+                    .then(() => {
+                        console.log('Item hidden');
+                        this.$emit('refresh-lists');
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            },
             createList() {
                 console.log('Creating list');
                 this.loadingCreate = true;
@@ -226,5 +260,16 @@
     .multi-line-btn-toggle .v-btn {
         /* margin: 4px; */
         padding: 10px;
+    }
+
+    /* hide the "scrim", it's pointless */
+    .v-overlay--active .v-overlay__scrim {
+        display: none;
+    }
+
+    /* style the overlay container as required */
+    .v-overlay--active {
+        backdrop-filter: blur(3px);
+        background: rgb(0 0 0 / 0.2);
     }
 </style>

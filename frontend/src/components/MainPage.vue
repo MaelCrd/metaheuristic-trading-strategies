@@ -4,7 +4,7 @@
       <v-col class="left-nav full-height">
         <!-- Left navigation content here -->
 
-        <v-list density="compact" nav class="full-height">
+        <v-list density="compact" nav class="full-height pa-3">
           <h3 class="nav-title">Navigation</h3>
           <v-list-item prepend-icon="mdi-view-dashboard" title="Home" value="home" @click="handleNavigation('home')" />
           <v-list-item prepend-icon="mdi-currency-btc" title="Crypto symbols" value="symbols"
@@ -35,7 +35,8 @@
             @refresh-symbols="handleRefreshSymbols" />
           <CryptoLists v-if="selected === 'lists'" :items="crypto_lists" :crypto_symbols="crypto_symbols"
             @refresh-lists="handleRefreshLists" />
-          <Metaheuristics v-if="selected === 'mh-objects'" :items="mh_objects" />
+          <Metaheuristics v-if="selected === 'mh-objects'" :items="mh_objects"
+            @refresh-mh-objects="handleRefreshMHObjects" />
           <Tasks v-if="selected === 'tasks'" :items="tasks" />
         </v-card>
       </v-col>
@@ -100,6 +101,9 @@
     //   item.selected = false
     // })
 
+    // Sort by id
+    response.data.sort((a: any, b: any) => a.id - b.id)
+
     crypto_symbols.value = response.data
   }
 
@@ -133,18 +137,29 @@
       }
     })
 
+    // Sort by id
+    response.data.sort((a: any, b: any) => a.id - b.id)
+
     crypto_lists.value = response.data
   }
 
   const fetchMetaheuristics = async () => {
     console.log('Fetching metaheuristics')
     const response = await axios.get('http://localhost:9797/api/mh_object')
+
+    // Sort by id
+    response.data.sort((a: any, b: any) => a.id - b.id)
+
     mh_objects.value = response.data
   }
 
   const fetchTasks = async () => {
     console.log('Fetching tasks')
     const response = await axios.get('http://localhost:9797/api/task')
+
+    // Sort by id
+    response.data.sort((a: any, b: any) => a.id - b.id)
+
     tasks.value = response.data
   }
 
@@ -154,6 +169,10 @@
 
   const handleRefreshLists = () => {
     fetchCryptoLists()
+  }
+
+  const handleRefreshMHObjects = () => {
+    fetchMetaheuristics()
   }
 
   // Refresh data
