@@ -8,10 +8,13 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
+    copy: typeof import('./components/ListBanner.vue')['default']
+    CryptoLists: typeof import('./components/CryptoLists.vue')['default']
     CryptoSymbols: typeof import('./components/CryptoSymbols.vue')['default']
-    DataSender: typeof import('./components/MainPage.vue')['default']
     MainPage: typeof import('./components/MainPage.vue')['default']
+    Metaheuristics: typeof import('./components/Metaheuristics.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Tasks: typeof import('./components/Tasks.vue')['default']
   }
 }
