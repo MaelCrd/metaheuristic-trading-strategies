@@ -25,7 +25,7 @@ use backend::manager;
 #[tokio::main]
 async fn main() {
     // Load the environment variables from the .env file
-    assert!(dotenv().is_ok());
+    // assert!(dotenv().is_ok());
 
     // let args: Vec<String> = env::args().collect();
     // let minutes = args[1].parse::<i64>().unwrap();
