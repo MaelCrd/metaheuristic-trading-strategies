@@ -10,7 +10,7 @@
             </div>
         </v-row>
         <v-row>
-            <v-data-table multi-sort :headers="headers" :items="items" class="pa-6">
+            <v-data-table multi-sort :headers="headers" :items="items" class="pl-6 pr-6 pb-6">
                 <template v-slot:item.available="{ item }">
                     <v-chip :color="item.available ? 'green' : 'red'"
                         :text="item.available ? 'Available' : 'Unavailable'" class="text-uppercase" size="small" label>
@@ -33,10 +33,10 @@
         data() {
             return {
                 headers: [
-                    { title: 'Symbol', value: 'symbol' },
-                    { title: 'Volume', value: 'volume' },
-                    { title: 'Available', value: 'available' },
-                    { title: 'Last updated', value: 'last_updated' },
+                    { title: 'Symbol', value: 'symbol', sortable: true },
+                    { title: 'Volume', value: 'volume', sortable: true },
+                    { title: 'Available', value: 'available', sortable: true },
+                    { title: 'Last updated', value: 'last_updated', sortable: true },
                 ],
                 loadingRefresh: false,
                 iconRefresh: 'mdi-refresh',

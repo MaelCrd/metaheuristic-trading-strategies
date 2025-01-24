@@ -7,12 +7,10 @@
             <div>
                 <v-btn variant="outlined" prepend-icon="mdi-plus" color="primary" @click="dialogCreate = true">
                     Create</v-btn>
-                <!-- <v-btn class="ml-3" variant="outlined" :prepend-icon="iconRefresh" color="primary" :loading="loadingRefresh"
-                    @click="refreshSymbols">Refresh</v-btn> -->
             </div>
         </v-row>
         <v-row>
-            <v-data-table multi-sort :headers="headers" :items="items" class="pa-6">
+            <v-data-table multi-sort :headers="headers" :items="items" class="pl-6 pr-6 pb-6">
                 <template v-slot:item.hidden="{ item }">
                     <v-chip :color="item.hidden ? 'green' : 'red'" :text="item.hidden ? 'Hidden' : 'Visible'"
                         class="text-uppercase" size="small" label>
@@ -20,87 +18,92 @@
                 </template>
             </v-data-table>
         </v-row>
-    </v-col>
 
-    <v-dialog v-model="dialogCreate" max-width="500px" opacity="0.2">
-        <v-card>
-            <v-card-title class="mt-3 ml-3">Create crypto list</v-card-title>
-            <v-card-text>
-                <v-form ref="form" v-model="valid">
-                    <v-text-field variant="outlined" v-model="formData.name" label="List name"
-                        :rules="[v => !!v || 'Name is required']" required />
-                    <h4 class="mb-1">Interval</h4>
-                    <v-btn-toggle v-model="intervalSelected" color="accent" rounded="0" group
-                        class="multi-line-btn-toggle mb-8">
-                        <v-btn v-for="interval in intervals" :key="interval" :value="interval"
-                            class="text-capitalize">{{
-                                interval }}</v-btn>
-                    </v-btn-toggle>
-                    <v-row>
-                        <v-col cols="6">
-                            <v-text-field variant="outlined" v-model="formData.durationValue" label="Duration"
-                                type="number" :rules="[v => !!v || 'Duration is required']" required />
-                        </v-col>
-                        <v-col cols="6">
-                            <v-select variant="outlined" v-model="formData.durationUnit" :items="durations" label="Unit"
-                                :rules="[v => !!v || 'Unit is required']" required />
+        <!--  -->
+        <v-dialog v-model="dialogCreate" max-width="500px" opacity="0.1">
+            <v-card>
+                <v-card-title class="mt-3 ml-3">Create crypto list</v-card-title>
+                <v-card-text>
+                    <v-form ref="form" v-model="valid">
+                        <v-text-field variant="outlined" v-model="formData.name" label="List name"
+                            :rules="[v => !!v || 'Name is required']" required />
+                        <h4 class="mb-1">Interval</h4>
+                        <v-btn-toggle v-model="intervalSelected" color="accent" rounded="0" group
+                            class="multi-line-btn-toggle mb-8">
+                            <v-btn v-for="interval in intervals" :key="interval" :value="interval"
+                                class="text-capitalize">{{
+                                    interval }}</v-btn>
+                        </v-btn-toggle>
+                        <v-row>
+                            <v-col cols="6">
+                                <v-text-field variant="outlined" v-model="formData.durationValue" label="Duration"
+                                    type="number" :rules="[v => !!v || 'Duration is required']" required />
+                            </v-col>
+                            <v-col cols="6">
+                                <v-select variant="outlined" v-model="formData.durationUnit" :items="durations"
+                                    label="Unit" :rules="[v => !!v || 'Unit is required']" required />
+                            </v-col>
+                        </v-row>
+                        <v-select variant="outlined" v-model="formData.type" :items="types" label="Type"
+                            :rules="[v => !!v || 'Type is required']" required />
+                        <v-btn class="mb-6" color="secondary" prepend-icon="mdi-selection-search"
+                            @click="dialogSelectSymbols = true">
+                            Change symbols ({{ selectedSymbols.length }})
+                        </v-btn>
+                        <div></div>
+                        <v-btn color="success" @click="createList" :loading="loadingCreate"
+                            :disabled="!valid || selectedSymbols.length === 0 || !intervalSelected">
+                            Create
+                        </v-btn>
+                    </v-form>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+
+        <!-- Dialog to select symbols -->
+        <v-dialog v-model="dialogSelectSymbols" max-width="700px" opacity="0">
+            <v-card>
+                <v-card-title class="mt-3 ml-3">Select symbols</v-card-title>
+                <v-card-text>
+                    <v-row align="center" justify="space-between">
+                        <v-col cols="12">
+                            <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify"
+                                variant="outlined" hide-details single-line></v-text-field>
                         </v-col>
                     </v-row>
-                    <v-select variant="outlined" v-model="formData.type" :items="types" label="Type"
-                        :rules="[v => !!v || 'Type is required']" required />
-                    <v-btn class="mb-6" color="secondary" prepend-icon="mdi-selection-search"
-                        @click="dialogSelectSymbols = true">
-                        Change symbols ({{ selectedSymbols.length }})
-                    </v-btn>
-                    <div></div>
-                    <v-btn color="success" @click="createList" :loading="loadingCreate"
-                        :disabled="!valid || selectedSymbols.length === 0 || !intervalSelected">
-                        Create
-                    </v-btn>
-                </v-form>
-            </v-card-text>
-        </v-card>
-    </v-dialog>
+                    <v-row>
+                        <v-col cols="12">
+                            <v-data-table :headers="headersSymbols" :items="crypto_symbols" density="compact"
+                                class="pa-2"
+                                :sort-by="[{ key: 'available', order: 'desc' }, { key: 'volume', order: 'desc' }]"
+                                :search="search" show-select v-model="selectedSymbols" multi-sort>
+                                <template v-slot:item.available="{ item }">
+                                    <v-icon :color="item.available ? 'green' : 'red'">
+                                        {{ item.available ? 'mdi-check' : 'mdi-close' }}
+                                    </v-icon>
+                                </template>
+                            </v-data-table>
+                        </v-col>
+                    </v-row>
+                    <v-row align="center" justify="space-between">
+                        <v-col cols="4">
+                            <v-btn variant="outlined" color="error" @click="selectedSymbols = []"
+                                prepend-icon="mdi-close">
+                                Clear selection
+                            </v-btn>
+                        </v-col>
+                        <v-col cols="auto">
+                            <v-btn color="success" @click="dialogSelectSymbols = false">
+                                Done
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+            </v-card>
+        </v-dialog>
+    </v-col>
 
-    <!-- Dialog to select symbols -->
-    <v-dialog v-model="dialogSelectSymbols" max-width="700px" opacity="0.2">
-        <v-card>
-            <v-card-title class="mt-3 ml-3">Select symbols</v-card-title>
-            <v-card-text>
-                <v-row align="center" justify="space-between">
-                    <v-col cols="12">
-                        <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify"
-                            variant="outlined" hide-details single-line></v-text-field>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12">
-                        <v-data-table :headers="headersSymbols" :items="crypto_symbols" density="compact" class="pa-2"
-                            :sort-by="[{ key: 'available', order: 'desc' }, { key: 'volume', order: 'desc' }]"
-                            :search="search" show-select v-model="selectedSymbols" multi-sort>
-                            <template v-slot:item.available="{ item }">
-                                <v-icon :color="item.available ? 'green' : 'red'">
-                                    {{ item.available ? 'mdi-check' : 'mdi-close' }}
-                                </v-icon>
-                            </template>
-                        </v-data-table>
-                    </v-col>
-                </v-row>
-                <v-row align="center" justify="space-between">
-                    <v-col cols="4">
-                        <v-btn variant="outlined" color="error" @click="selectedSymbols = []" prepend-icon="mdi-close">
-                            Clear selection
-                        </v-btn>
-                    </v-col>
-                    <v-col cols="auto">
-                        <v-btn color="success" @click="dialogSelectSymbols = false">
-                            Done
-                        </v-btn>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-        </v-card>
-    </v-dialog>
+
 </template>
 
 <script lang="ts">
