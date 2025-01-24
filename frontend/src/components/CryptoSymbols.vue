@@ -1,11 +1,12 @@
 <template>
     <v-col class="main-content">
-        <v-row align="center" justify="space-between" class="mt-4 mr-8">
+        <v-row align="center" justify="space-between" class="mt-2 mr-8">
             <v-card-title>
                 <h3>Crypto symbols</h3>
             </v-card-title>
             <div>
-                <v-btn prepend-icon="mdi-refresh" color="primary" @click="refreshSymbols">Refresh</v-btn>
+                <v-btn variant="outlined" :prepend-icon="iconRefresh" color="primary" :loading="loadingRefresh"
+                    @click="refreshSymbols">Refresh</v-btn>
             </div>
         </v-row>
         <v-row>
@@ -21,12 +22,14 @@
 </template>
 
 <script lang="ts">
+    import axios from 'axios';
 
     export default {
         name: 'CryptoSymbols',
         props: {
             items: Array,
         },
+        emits: ['refresh-symbols'],
         data() {
             return {
                 headers: [
@@ -35,7 +38,8 @@
                     { title: 'Available', value: 'available' },
                     { title: 'Last updated', value: 'last_updated' },
                 ],
-                // Add your component data here
+                loadingRefresh: false,
+                iconRefresh: 'mdi-refresh',
             };
         },
         mounted() {
@@ -45,6 +49,29 @@
             // Add your component methods here
             refreshSymbols() {
                 console.log('Refreshing symbols');
+                this.loadingRefresh = true;
+
+                // Send POST request to the backend
+                axios.post('http://localhost:9797/api/crypto_symbol/reload')
+                    .then(() => {
+                        // console.log(response.data);
+
+                        // Refresh the symbols
+                        this.$emit('refresh-symbols');
+                        this.loadingRefresh = false;
+                        this.iconRefresh = 'mdi-check';
+                        setTimeout(() => {
+                            this.iconRefresh = 'mdi-refresh';
+                        }, 2000);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        this.loadingRefresh = false;
+                        this.iconRefresh = 'mdi-alert-circle';
+                        setTimeout(() => {
+                            this.iconRefresh = 'mdi-refresh';
+                        }, 2000);
+                    });
             },
         },
     }

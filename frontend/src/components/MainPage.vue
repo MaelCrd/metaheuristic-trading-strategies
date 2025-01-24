@@ -31,8 +31,10 @@
 
           <!-- <v-btn color="primary" class="ma-8" @click="fetchData">Refresh</v-btn> -->
 
-          <CryptoSymbols v-if="selected === 'symbols'" :items="crypto_symbols" />
-          <CryptoLists v-if="selected === 'lists'" :items="crypto_lists" />
+          <CryptoSymbols v-if="selected === 'symbols'" :items="crypto_symbols"
+            @refresh-symbols="handleRefreshSymbols" />
+          <CryptoLists v-if="selected === 'lists'" :items="crypto_lists" :crypto_symbols="crypto_symbols"
+            @refresh-lists="handleRefreshLists" />
           <Metaheuristics v-if="selected === 'mh-objects'" :items="mh_objects" />
           <Tasks v-if="selected === 'tasks'" :items="tasks" />
         </v-card>
@@ -48,6 +50,7 @@
   import CryptoLists from './CryptoLists.vue';
   import Metaheuristics from './Metaheuristics.vue';
   import Tasks from './Tasks.vue';
+  import moment from 'moment';
 
   let selected = ref('home');
 
@@ -75,25 +78,97 @@
     { state: 'state 3', created_at: '2021-10-12' },
   ]);
 
+  const handleNavigation = (value: string) => {
+    selected.value = value
+  }
+
+  const fetchSymbols = async () => {
+    console.log('Fetching symbols')
+    const response = await axios.get('http://localhost:9797/api/crypto_symbol')
+    // Set volume to integer
+    response.data.forEach((item: any) => {
+      item.volume = parseInt(item.volume)
+    })
+
+    // Set 'last_updated' to human readable format
+    response.data.forEach((item: any) => {
+      item.last_updated = moment(item.last_updated).format('YYYY-MM-DD HH:mm:ss')
+    })
+
+    // // Add 'selected' field
+    // response.data.forEach((item: any) => {
+    //   item.selected = false
+    // })
+
+    crypto_symbols.value = response.data
+  }
+
+  const fetchCryptoLists = async () => {
+    console.log('Fetching crypto lists')
+    const response = await axios.get('http://localhost:9797/api/crypto_list')
+    // Replace 'interval'
+    response.data.forEach((item: any) => {
+      item.interval = item.interval.replace('Int', '')
+    })
+    // Replace 'limit_count'
+    response.data.forEach((item: any) => {
+      // Limit is in minutes, convert to bigger units :
+      // ex: '13' = 13 minutes,
+      // ex: '68' = 1h 8m
+      // ex: '31680' = 22d
+      const limit = parseInt(item.limit_count)
+      const duration = moment.duration(limit, 'minutes');
+      if (limit < 60) {
+        item.limit_count = `${duration.minutes()}m`;
+      } else if (limit < 1440) {
+        item.limit_count = `${duration.hours()}h` + (duration.minutes() > 0 ? ` ${duration.minutes()}m` : '');
+      } else if (limit < 10080) {
+        item.limit_count = `${duration.days()}d` + (duration.hours() > 0 ? ` ${duration.hours()}h` : '');
+      } else if (limit < 43200) {
+        item.limit_count = `${Math.floor(duration.asWeeks())}w` + (duration.days() > 0 ? ` ${duration.days()}d` : '');
+      } else if (limit < 525600) {
+        item.limit_count = `${Math.floor(duration.asMonths())}M` + (duration.days() > 0 ? ` ${duration.days()}d` : '');
+      } else {
+        item.limit_count = `${Math.floor(duration.asYears())}y` + (duration.days() > 0 ? ` ${duration.days()}d` : '');
+      }
+    })
+
+    crypto_lists.value = response.data
+  }
+
+  const fetchMetaheuristics = async () => {
+    console.log('Fetching metaheuristics')
+    const response = await axios.get('http://localhost:9797/api/mh_object')
+    mh_objects.value = response.data
+  }
+
+  const fetchTasks = async () => {
+    console.log('Fetching tasks')
+    const response = await axios.get('http://localhost:9797/api/task')
+    tasks.value = response.data
+  }
+
+  const handleRefreshSymbols = () => {
+    fetchSymbols()
+  }
+
+  const handleRefreshLists = () => {
+    fetchCryptoLists()
+  }
+
   // Refresh data
   const fetchData = async () => {
-    const response = await axios.get('http://localhost:9797/api/crypto_symbol')
-    crypto_symbols.value = response.data
-    const response2 = await axios.get('http://localhost:9797/api/crypto_list')
-    crypto_lists.value = response2.data
-    const response3 = await axios.get('http://localhost:9797/api/mh_object')
-    mh_objects.value = response3.data
-    const response4 = await axios.get('http://localhost:9797/api/task')
-    tasks.value = response4.data
+    fetchSymbols()
+    fetchCryptoLists()
+    fetchMetaheuristics()
+    fetchTasks()
 
     console.log('Data refreshed')
   }
 
   fetchData()
 
-  const handleNavigation = (value: string) => {
-    selected.value = value
-  }
+  handleNavigation('lists')
 
 </script>
 
