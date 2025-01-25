@@ -14,7 +14,7 @@ declare module 'vue' {
     Indicators: typeof import('./components/Indicators.vue')['default']
     MainPage: typeof import('./components/MainPage.vue')['default']
     Metaheuristics: typeof import('./components/Metaheuristics.vue')['default']
-    RouterLink: typeof import('vue-router'./components/Indicators.vue
+    RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Tasks: typeof import('./components/Tasks.vue')['default']
   }

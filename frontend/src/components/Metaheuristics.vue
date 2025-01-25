@@ -60,7 +60,9 @@
     <!-- Dialog to create a metaheuristic object -->
     <v-dialog v-model="dialogCreate" max-width="600" opacity="0">
       <v-card>
-        <v-card-title>Create metaheuristic object</v-card-title>
+        <v-card-title class="mt-3 ml-3"
+          >Create metaheuristic object</v-card-title
+        >
         <v-card-text>
           <v-form ref="form" v-model="valid">
             <v-select
@@ -103,7 +105,7 @@
             </v-col>
             <div align="end">
               <v-btn
-                color="primary"
+                color="success"
                 :disabled="!valid || !selectedAlgorithm"
                 @click="createMHObject"
               >

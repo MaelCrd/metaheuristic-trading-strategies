@@ -264,6 +264,7 @@ const fetchData = async () => {
   fetchSymbols();
   fetchCryptoLists();
   fetchMetaheuristics();
+  fetchIndicators();
   fetchTasks();
 
   console.log("Data refreshed");

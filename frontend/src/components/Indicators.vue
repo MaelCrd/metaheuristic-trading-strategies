@@ -23,62 +23,125 @@
         :items="items"
         class="pl-6 pr-12 pb-6"
       >
+        <template v-slot:item.indicators_struct_names="{ item }">
+          <!-- <span>{{ item.indicators_struct_names.join(", ") }}</span> -->
+          <v-chip
+            v-for="(indicator, index) in item.indicators_struct_names"
+            :key="index"
+            color="success"
+            class="mr-2 mb-1 mt-2"
+          >
+            {{ indicator }}
+          </v-chip>
+        </template>
       </v-data-table>
     </v-row>
 
     <!-- Dialog to create an indicator combination -->
-    <v-dialog v-model="dialogCreate" max-width="600" opacity="0">
+    <v-dialog v-model="dialogCreate" max-width="900px" opacity="0">
       <v-card>
-        <v-card-title>Create indicator combination</v-card-title>
+        <v-card-title class="mt-3 ml-3"
+          >Create indicator combination</v-card-title
+        >
         <v-card-text>
           <v-form ref="form" v-model="valid">
-            <!-- <v-select
-              v-model="indicatorCombination.name"
-              :items="indicators.map((indicator) => indicator.name)"
-              label="Indicator"
-              required
-              @update:model-value="updateParameters"
-            /> -->
-
-            <p>{{ indicatorCombination }}</p>
-
-            <v-col no-gutters>
+            <v-col>
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    max-width="500"
+                    variant="outlined"
+                    v-model="indicatorCombination.name"
+                    label="Combination name"
+                    required
+                  />
+                </v-col>
+              </v-row>
+              <v-divider class="mb-5" />
               <v-row
                 v-for="(indicator, index) in indicatorCombination.indicators"
                 :key="index"
-                align="center"
-                justify="space-between"
               >
                 <v-col>
-                  <v-select
-                    :model-value="indicatorCombination.indicators[index].name"
-                    :items="indicators.map((indicator) => indicator.name)"
-                    label="Indicators"
-                    required
-                    @update:model-value="updateIndicator(index, $event)"
-                  />
-                </v-col>
-                <v-col>
-                  <v-btn
-                    color="error"
-                    icon="mdi-delete-outline"
-                    @click="removeIndicator(index)"
-                  ></v-btn>
+                  <v-row no-gutters>
+                    <v-col>
+                      <v-select
+                        :model-value="
+                          indicatorCombination.indicators[index].name
+                        "
+                        :items="indicators.map((indicator) => indicator.name)"
+                        label="Indicator"
+                        required
+                        @update:model-value="updateIndicator(index, $event)"
+                      />
+                    </v-col>
+                    <v-col>
+                      <v-btn
+                        class="ma-1"
+                        color="error"
+                        variant="text"
+                        icon="mdi-delete-outline"
+                        @click="removeIndicator(index)"
+                      />
+                    </v-col>
+                  </v-row>
+
+                  <div>
+                    <v-row v-if="indicatorCombination.indicators[index]">
+                      <v-col
+                        v-for="(param, key) in indicatorCombination
+                          .possibleParameters[index]"
+                        :key="key"
+                        align="start"
+                      >
+                        <v-text-field
+                          v-model="
+                            indicatorCombination.possibleParameters[index][key][
+                              'value'
+                            ]
+                          "
+                          max-width="420"
+                          variant="outlined"
+                          type="number"
+                          :label="
+                            param.name +
+                            ' (' +
+                            param.type +
+                            ') : ' +
+                            param.description
+                          "
+                          required
+                        />
+                      </v-col>
+                    </v-row>
+                  </div>
                 </v-col>
 
                 <v-divider />
               </v-row>
               <v-row align="start">
-                <v-btn color="primary" @click="addIndicator" class="mt-4"
-                  >Add indicator</v-btn
+                <v-btn
+                  color="primary"
+                  prepend-icon="mdi-plus"
+                  class="mt-4"
+                  @click="addIndicator"
                 >
+                  Add indicator
+                </v-btn>
               </v-row>
             </v-col>
             <div align="end">
               <v-btn
-                color="primary"
-                :disabled="!valid || !selectedAlgorithm"
-                @click="createMHObject"
+                color="success"
+                :disabled="
+                  !valid ||
+                  !indicatorCombination.name ||
+                  indicatorCombination.indicators.length === 0 ||
+                  indicatorCombination.possibleParameters.filter(
+                    (param) => Object.keys(param).length === 0
+                  ).length > 0
+                "
+                @click="createIndicatorCombination"
               >
                 Create
               </v-btn>
@@ -112,6 +175,7 @@ export default {
       indicatorCombination: {
         name: "",
         indicators: [],
+        possibleParameters: [],
       },
       indicators: [],
     };
@@ -129,33 +193,25 @@ export default {
     // Add your component methods here
     addIndicator() {
       this.indicatorCombination.indicators.push({});
+      this.indicatorCombination.possibleParameters.push({});
     },
     removeIndicator(index: number) {
       console.log("Removing indicator at index:", index);
-
-      for (let i = 0; i < this.indicatorCombination.indicators.length; i++) {
-        console.log(
-          "Indicator at index",
-          i,
-          ":",
-          this.indicatorCombination.indicators[i]
-        );
-      }
-
       this.indicatorCombination.indicators.splice(index, 1);
-
-      for (let i = 0; i < this.indicatorCombination.indicators.length; i++) {
-        console.log(
-          "Indicator at index",
-          i,
-          ":",
-          this.indicatorCombination.indicators[i]
-        );
-      }
+      this.indicatorCombination.possibleParameters.splice(index, 1);
     },
     updateIndicator(index: number, value: string) {
       console.log("Updating indicator at index:", index, "with value:", value);
-      this.indicatorCombination.indicators[index]["name"] = value;
+      this.indicatorCombination.indicators[index] = { name: value };
+      const indicator = this.indicators.find((i) => i.name === value);
+      this.indicatorCombination.possibleParameters[index] = {};
+      indicator.parameters.forEach((param) => {
+        (this.indicatorCombination.possibleParameters[index][param.name] =
+          param),
+          (this.indicatorCombination.possibleParameters[index][param.name][
+            "value"
+          ] = String(param.default));
+      });
     },
     createIndicatorCombination() {
       console.log("Creating indicator combination:", this.indicatorCombination);
@@ -165,26 +221,46 @@ export default {
         return;
       }
 
-      // const mhObject = {
-      //   mh_algorithm_name: this.mhObject.mh_algorithm_name,
-      //   mh_parameters: JSON.stringify(this.mhObject.mh_parameters),
-      // };
+      const combination = {
+        name: this.indicatorCombination.name,
+        indicators: this.indicatorCombination.indicators.map(
+          (indicatorInList, index) => {
+            const indicator = this.indicators.find(
+              (i) => i.name === indicatorInList.name
+            );
+            const parameters = {};
+            indicator.parameters.forEach((param) => {
+              parameters[param.name] = Number(
+                this.indicatorCombination.possibleParameters[index][param.name][
+                  "value"
+                ]
+              );
+            });
+            return JSON.stringify({
+              indicator_struct_name: indicator.struct_name,
+              parameters: JSON.stringify(parameters).replace(/"/g, "'"),
+            });
+          }
+        ),
+      };
 
-      // axios
-      //   .post("http://localhost:9797/api/mh_object", mhObject)
-      //   .then(() => {
-      //     console.log("Metaheuristic object created successfully");
-      //     this.dialogCreate = false;
-      //     this.selectedAlgorithm = null;
-      //     this.mhObject = {
-      //       mh_algorithm_name: "",
-      //       mh_parameters: {},
-      //     };
-      //     this.$emit("refresh-mh-objects");
-      //   })
-      //   .catch((error) => {
-      //     console.error("Error creating metaheuristic object:", error);
-      //   });
+      console.log("Creating indicator combination:", combination);
+
+      axios
+        .post("http://localhost:9797/api/indicator_combinations", combination)
+        .then(() => {
+          console.log("Indicator combination created successfully");
+          this.dialogCreate = false;
+          this.indicatorCombination = {
+            name: "",
+            indicators: [],
+            possibleParameters: [],
+          };
+          this.$emit("refresh-indicators");
+        })
+        .catch((error) => {
+          console.error("Error creating indicator combination:", error);
+        });
     },
     async getIndicatorInfo() {
       // Add your method logic here
