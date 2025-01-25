@@ -31,6 +31,12 @@
             @click="handleNavigation('mh-objects')"
           />
           <v-list-item
+            prepend-icon="mdi-vector-polyline"
+            title="Indicators"
+            value="indicators"
+            @click="handleNavigation('indicators')"
+          />
+          <v-list-item
             prepend-icon="mdi-code-block-tags"
             title="Tasks"
             value="tasks"
@@ -68,7 +74,18 @@
             :items="mh_objects"
             @refresh-mh-objects="handleRefreshMHObjects"
           />
-          <Tasks v-if="selected === 'tasks'" :items="tasks" />
+          <Indicators
+            v-if="selected === 'indicators'"
+            :items="indicators"
+            @refresh-indicators="handleRefreshIndicators"
+          />
+          <Tasks
+            v-if="selected === 'tasks'"
+            :items="tasks"
+            :crypto-lists="crypto_lists"
+            :mh-objects="mh_objects"
+            @refresh-tasks="handleRefreshTasks"
+          />
         </v-card>
       </v-col>
     </v-row>
@@ -102,6 +119,12 @@ let mh_objects = ref([
   { mh_algorithm_name: "Algorithm 1", mh_parameters: '{"param 1": 2}' },
   { mh_algorithm_name: "Algorithm 2", mh_parameters: '{"param 1": 2}' },
   { mh_algorithm_name: "Algorithm 3", mh_parameters: '{"param 1": 2}' },
+]);
+
+let indicators = ref([
+  { name: "Indicator 1", indicators_struct_names: ["struct 1"] },
+  { name: "Indicator 2", indicators_struct_names: ["struct 2"] },
+  { name: "Indicator 3", indicators_struct_names: ["struct 3"] },
 ]);
 
 let tasks = ref([
@@ -194,6 +217,18 @@ const fetchMetaheuristics = async () => {
   mh_objects.value = response.data;
 };
 
+const fetchIndicators = async () => {
+  console.log("Fetching indicators");
+  const response = await axios.get(
+    "http://localhost:9797/api/indicator_combinations"
+  );
+
+  // Sort by id
+  response.data.sort((a: any, b: any) => a.id - b.id);
+
+  indicators.value = response.data;
+};
+
 const fetchTasks = async () => {
   console.log("Fetching tasks");
   const response = await axios.get("http://localhost:9797/api/task");
@@ -216,6 +251,14 @@ const handleRefreshMHObjects = () => {
   fetchMetaheuristics();
 };
 
+const handleRefreshIndicators = () => {
+  fetchIndicators();
+};
+
+const handleRefreshTasks = () => {
+  fetchTasks();
+};
+
 // Refresh data
 const fetchData = async () => {
   fetchSymbols();
@@ -228,7 +271,7 @@ const fetchData = async () => {
 
 fetchData();
 
-handleNavigation("mh-objects");
+handleNavigation("indicators");
 </script>
 
 <style scoped>
