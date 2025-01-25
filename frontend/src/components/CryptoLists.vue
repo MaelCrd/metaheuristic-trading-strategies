@@ -47,12 +47,7 @@
     </v-row>
 
     <!--  -->
-    <v-dialog
-      v-model="dialogCreate"
-      max-width="500px"
-      opacity="0"
-      color="black"
-    >
+    <v-dialog v-model="dialogCreate" max-width="500px" opacity="0">
       <v-card>
         <v-card-title class="mt-3 ml-3">Create crypto list</v-card-title>
         <v-card-text>
@@ -120,16 +115,19 @@
               Change symbols ({{ selectedSymbols.length }})
             </v-btn>
             <div />
-            <v-btn
-              color="success"
-              :loading="loadingCreate"
-              :disabled="
-                !valid || selectedSymbols.length === 0 || !intervalSelected
-              "
-              @click="createList"
-            >
-              Create
-            </v-btn>
+            <div align="end">
+              <v-btn
+                color="success"
+                :loading="loadingCreate"
+                :disabled="
+                  !valid || selectedSymbols.length === 0 || !intervalSelected
+                "
+                type="submit"
+                @click="createList"
+              >
+                Create
+              </v-btn>
+            </div>
           </v-form>
         </v-card-text>
       </v-card>

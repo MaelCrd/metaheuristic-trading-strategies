@@ -39,7 +39,7 @@
         </template>
         <template v-slot:item.mh_parameters="{ item }">
           <v-chip
-            v-for="(param, index) in JSON.parse(item.mh_parameters)"
+            v-for="(param, index) in parseParameters(item.mh_parameters)"
             :key="index"
             size="small"
             class="mr-2"
@@ -56,6 +56,64 @@
         </template>
       </v-data-table>
     </v-row>
+
+    <!-- Dialog to create a metaheuristic object -->
+    <v-dialog v-model="dialogCreate" max-width="600" opacity="0">
+      <v-card>
+        <v-card-title>Create metaheuristic object</v-card-title>
+        <v-card-text>
+          <v-form ref="form" v-model="valid">
+            <v-select
+              v-model="mhObject.mh_algorithm_name"
+              :items="algorithms.map((algo) => algo.name)"
+              label="Algorithm"
+              required
+              @update:model-value="updateParameters"
+            />
+            <v-col v-if="selectedAlgorithm">
+              <h4 class="mb-4">Parameters</h4>
+              <v-row
+                v-for="(param, index) in selectedAlgorithm.parameters"
+                :key="index"
+                align="start"
+              >
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="mhObject.mh_parameters[param.name]"
+                    variant="outlined"
+                    :label="param.name + ' (' + String(param.bounds) + ')'"
+                    type="number"
+                    :min="param.bounds[0]"
+                    :max="param.bounds[1]"
+                    :rules="[
+                      (value) =>
+                        (value >=
+                          (param.bounds[0] ? param.bounds[0] : -Infinity) &&
+                          value <=
+                            (param.bounds[1] ? param.bounds[1] : +Infinity)) ||
+                        `Value must be between ${param.bounds[0]} and ${param.bounds[1]}`,
+                    ]"
+                    required
+                  />
+                </v-col>
+                <v-col>
+                  {{ param.description }}
+                </v-col>
+              </v-row>
+            </v-col>
+            <div align="end">
+              <v-btn
+                color="primary"
+                :disabled="!valid || !selectedAlgorithm"
+                @click="createMHObject"
+              >
+                Create
+              </v-btn>
+            </div>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-col>
 </template>
 
@@ -76,6 +134,14 @@ export default {
         { title: "Actions", value: "actions", width: "10%" },
       ],
       showHidden: false,
+      dialogCreate: false,
+      valid: false,
+      mhObject: {
+        mh_algorithm_name: "",
+        mh_parameters: {},
+      },
+      algorithms: [],
+      selectedAlgorithm: null,
       // Add your component data here
     };
   },
@@ -89,6 +155,9 @@ export default {
   },
   mounted() {
     // Add your mounted logic here
+    this.getMHinfo().then((data) => {
+      this.algorithms = data;
+    });
   },
   methods: {
     // Add your component methods here
@@ -113,6 +182,66 @@ export default {
           console.error("Error hiding item:", error);
         });
     },
+    createMHObject() {
+      console.log("Creating metaheuristic object:", this.mhObject);
+
+      if (
+        !this.valid ||
+        !this.mhObject.mh_algorithm_name ||
+        !this.selectedAlgorithm
+      ) {
+        console.error("Invalid form data");
+        return;
+      }
+
+      const mhObject = {
+        mh_algorithm_name: this.mhObject.mh_algorithm_name,
+        mh_parameters: JSON.stringify(this.mhObject.mh_parameters),
+      };
+
+      axios
+        .post("http://localhost:9797/api/mh_object", mhObject)
+        .then(() => {
+          console.log("Metaheuristic object created successfully");
+          this.dialogCreate = false;
+          this.selectedAlgorithm = null;
+          this.mhObject = {
+            mh_algorithm_name: "",
+            mh_parameters: {},
+          };
+          this.$emit("refresh-mh-objects");
+        })
+        .catch((error) => {
+          console.error("Error creating metaheuristic object:", error);
+        });
+    },
+    async getMHinfo() {
+      // Add your method logic here
+      const response = await axios.get("http://localhost:9797/api/algorithms");
+      console.log(response.data);
+
+      return response.data;
+    },
+    updateParameters() {
+      this.selectedAlgorithm = this.algorithms.find(
+        (algo) => algo.name === this.mhObject.mh_algorithm_name
+      );
+      console.log("Selected algorithm:", this.selectedAlgorithm);
+      // this.mhObject.mh_parameters = {};
+      // if (this.selectedAlgorithm) {
+      //   this.selectedAlgorithm.parameters.forEach((param) => {
+      //     this.mhObject.mh_parameters[param.name] = "";
+      //   });
+      // }
+    },
+    parseParameters(parameters: string) {
+      try {
+        return JSON.parse(parameters);
+      } catch (e) {
+        console.error("Failed to parse parameters:", e);
+        return [];
+      }
+    },
   },
 };
 </script>
@@ -120,5 +249,16 @@ export default {
 <style scoped>
 .metaheuristics {
   /* Add your component styles here */
+}
+
+/* hide the "scrim", it's pointless */
+.v-overlay--active .v-overlay__scrim {
+  display: none;
+}
+
+/* style the overlay container as required */
+.v-overlay--active {
+  backdrop-filter: blur(3px);
+  background: rgb(0 0 0 / 0.2);
 }
 </style>

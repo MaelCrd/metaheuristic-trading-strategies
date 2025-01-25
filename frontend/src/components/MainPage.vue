@@ -99,9 +99,9 @@ let crypto_lists = ref([
 ]);
 
 let mh_objects = ref([
-  { mh_algorithm_name: "Algorithm 1", mh_parameters: "param 1" },
-  { mh_algorithm_name: "Algorithm 2", mh_parameters: "param 2" },
-  { mh_algorithm_name: "Algorithm 3", mh_parameters: "param 3" },
+  { mh_algorithm_name: "Algorithm 1", mh_parameters: '{"param 1": 2}' },
+  { mh_algorithm_name: "Algorithm 2", mh_parameters: '{"param 1": 2}' },
+  { mh_algorithm_name: "Algorithm 3", mh_parameters: '{"param 1": 2}' },
 ]);
 
 let tasks = ref([
@@ -228,7 +228,7 @@ const fetchData = async () => {
 
 fetchData();
 
-handleNavigation("lists");
+handleNavigation("mh-objects");
 </script>
 
 <style scoped>
