@@ -29,6 +29,7 @@
         multi-sort
         :headers="headers"
         :items="filteredItems"
+        hover
         class="pl-6 pr-12 pb-6"
       >
         <template v-slot:item.name="{ item }">

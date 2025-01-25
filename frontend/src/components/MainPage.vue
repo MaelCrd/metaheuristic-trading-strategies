@@ -84,6 +84,7 @@
             :items="tasks"
             :crypto-lists="crypto_lists"
             :mh-objects="mh_objects"
+            :indicators="indicators"
             @refresh-tasks="handleRefreshTasks"
           />
         </v-card>
@@ -232,6 +233,11 @@ const fetchIndicators = async () => {
 const fetchTasks = async () => {
   console.log("Fetching tasks");
   const response = await axios.get("http://localhost:9797/api/task");
+
+  // Set 'created_at' to human readable format
+  response.data.forEach((item: any) => {
+    item.created_at = moment(item.created_at).format("YYYY-MM-DD HH:mm:ss");
+  });
 
   // Sort by id
   response.data.sort((a: any, b: any) => a.id - b.id);

@@ -21,6 +21,7 @@
         multi-sort
         :headers="headers"
         :items="items"
+        hover
         class="pl-6 pr-12 pb-6"
       >
         <template v-slot:item.indicators_struct_names="{ item }">
@@ -29,6 +30,7 @@
             v-for="(indicator, index) in item.indicators_struct_names"
             :key="index"
             color="success"
+            size="small"
             class="mr-2 mb-1 mt-2"
           >
             {{ indicator }}
