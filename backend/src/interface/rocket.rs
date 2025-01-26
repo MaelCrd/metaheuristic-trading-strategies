@@ -1,13 +1,9 @@
 use rocket::fairing::AdHoc;
 use rocket::http::Method;
 use rocket::Build;
-use rocket::State;
 use rocket_cors::{AllowedHeaders, AllowedOrigins};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
-use std::sync::Arc;
-
-use crate::manager::TaskManager;
 
 use super::handlers::streams::TaskStateChannel;
 use super::routes;

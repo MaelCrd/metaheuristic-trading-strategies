@@ -6,7 +6,7 @@ use sqlx::PgPool;
 use crate::objects::objects::{CreateTask, Task, TaskState};
 use crate::utils;
 
-use super::streams::TaskStateChannel;
+use super::streams::{TaskStateChannel, TaskUpdate};
 
 // Define a route to get all tasks
 #[get("/task?<id>")]
@@ -208,7 +208,14 @@ pub async fn update_task_state(
             Err("Task not found or already in the desired state".into())
         }
         _ => {
-            let _ = channel.sender.send(state.convert_to());
+            let _ = channel.sender.send(TaskUpdate {
+                task_id: id,
+                state: state.convert_to(),
+            });
+            println!(
+                "Sent task update to channel (id: {:?}, state: {:?})",
+                id, state
+            );
             Ok(())
         }
     }

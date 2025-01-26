@@ -1,12 +1,12 @@
-use std::env;
+// use std::env;
 
-use backend::objects::{
-    self,
-    indicators::{Indicator, IndicatorTrait, MovingAverage, StochasticOscillator},
-    intervals::CryptoInterval,
-    klines::KlineCollection,
-    objects::CryptoSymbol,
-};
+// use backend::objects::{
+//     self,
+//     indicators::{Indicator, IndicatorTrait, MovingAverage, StochasticOscillator},
+//     intervals::CryptoInterval,
+//     klines::KlineCollection,
+//     objects::CryptoSymbol,
+// };
 // use backend::objects::objects::CryptoSymbolSimple;
 // use chrono::DateTime;
 // use chrono::NaiveDateTime;
@@ -18,7 +18,7 @@ use dotenv::dotenv;
 
 use backend::interface::rocket;
 // use backend::utils::loading;
-use backend::binance;
+// use backend::binance;
 use backend::manager;
 // use backend::metaheuristic::mh;
 
@@ -48,22 +48,26 @@ async fn main() {
     })
     .await;
 
-    // tokio::spawn(async move {
-    //     task_manager.start().await.unwrap();
-    // });
+    // Start the TaskManager
+    tokio::spawn(async move {
+        task_manager.start().await.unwrap();
+    });
 
-    let f2 = rocket_app.launch();
-    let f1 = task_manager.start();
+    // Run the Rocket application
+    rocket_app.launch().await.unwrap();
 
-    let (res1, res2) = futures::join!(f1, f2);
+    // let f2 = rocket_app.launch();
+    // let f1 = task_manager.start();
 
-    if let Err(e) = res1 {
-        eprintln!("Error in task manager: {:?}", e);
-    }
+    // let (res1, res2) = futures::join!(f1, f2);
 
-    if let Err(e) = res2 {
-        eprintln!("Error in rocket app: {:?}", e);
-    }
+    // if let Err(e) = res1 {
+    //     eprintln!("Error in task manager: {:?}", e);
+    // }
+
+    // if let Err(e) = res2 {
+    //     eprintln!("Error in rocket app: {:?}", e);
+    // }
 
     // // Run the Rocket application
     // rocket_app.launch().await.unwrap();
@@ -80,79 +84,79 @@ async fn main() {
 
     //
 
-    let minutes = 10 * 5;
-    let force_fetch = false;
+    // let minutes = 10 * 5;
+    // let force_fetch = false;
 
-    let crypto_symbol = CryptoSymbol {
-        id: 1,
-        symbol: "BTCUSDT".to_string(),
-        name: "Bitcoin".to_string(),
-        volume: 100.0,
-        last_updated: chrono::Utc::now(),
-        available: true,
-    };
-    let mut klines_collection: KlineCollection = KlineCollection::new();
-    if klines_collection
-        .retrieve_klines_simple(
-            &crypto_symbol,
-            &CryptoInterval::Int5m,
-            chrono::Duration::minutes(minutes).num_minutes(),
-            0.75,
-            force_fetch,
-        )
-        .await
-        .is_err()
-    {
-        println!("Error retrieving klines");
-        return;
-    }
+    // let crypto_symbol = CryptoSymbol {
+    //     id: 1,
+    //     symbol: "BTCUSDT".to_string(),
+    //     name: "Bitcoin".to_string(),
+    //     volume: 100.0,
+    //     last_updated: chrono::Utc::now(),
+    //     available: true,
+    // };
+    // let mut klines_collection: KlineCollection = KlineCollection::new();
+    // if klines_collection
+    //     .retrieve_klines_simple(
+    //         &crypto_symbol,
+    //         &CryptoInterval::Int5m,
+    //         chrono::Duration::minutes(minutes).num_minutes(),
+    //         0.75,
+    //         force_fetch,
+    //     )
+    //     .await
+    //     .is_err()
+    // {
+    //     println!("Error retrieving klines");
+    //     return;
+    // }
 
-    klines_collection.display();
-    // klines_collection.check_integrity();
+    // klines_collection.display();
+    // // klines_collection.check_integrity();
 
-    // Print first and last open time
-    println!(
-        "First open time: {:?}",
-        klines_collection.get_first_open_time()
-    );
-    println!(
-        "Last open time: {:?}",
-        klines_collection.get_last_open_time()
-    );
+    // // Print first and last open time
+    // println!(
+    //     "First open time: {:?}",
+    //     klines_collection.get_first_open_time()
+    // );
+    // println!(
+    //     "Last open time: {:?}",
+    //     klines_collection.get_last_open_time()
+    // );
 
-    // let mut indicator_2: Indicator =
-    //     Indicator::StochasticOscillator(StochasticOscillator::new(5, 3));
-    let mut indicator_2 = Indicator::MovingAverage(MovingAverage::new(7));
+    // // let mut indicator_2: Indicator =
+    // //     Indicator::StochasticOscillator(StochasticOscillator::new(5, 3));
+    // let mut indicator_2 = Indicator::MovingAverage(MovingAverage::new(7));
 
-    if klines_collection
-        .retrieve_extended_klines(&indicator_2)
-        .await
-        .is_err()
-    {
-        println!("Error retrieving klines");
-        return;
-    }
+    // if klines_collection
+    //     .retrieve_extended_klines(&indicator_2)
+    //     .await
+    //     .is_err()
+    // {
+    //     println!("Error retrieving klines");
+    //     return;
+    // }
 
-    klines_collection.display();
+    // klines_collection.display();
 
-    // Indicator test
-    if indicator_2.retrieve(&klines_collection).await.is_err() {
-        println!("Error retrieving indicator");
-        return;
-    }
+    // // Indicator test
+    // if indicator_2.retrieve(&klines_collection).await.is_err() {
+    //     println!("Error retrieving indicator");
+    //     return;
+    // }
 
-    println!("Indicator: {:?}", indicator_2);
+    // println!("Indicator: {:?}", indicator_2);
 
-    indicator_2.calculate_criteria(&klines_collection);
-    let criteria = indicator_2.get_criteria();
-    println!("Criteria: {:?}", criteria);
-    for c in criteria {
-        println!("Criteria: {:?}", c);
-    }
+    // indicator_2.calculate_criteria(&klines_collection);
+    // let criteria = indicator_2.get_criteria();
+    // println!("Criteria: {:?}", criteria);
+    // for c in criteria {
+    //     println!("Criteria: {:?}", c);
+    // }
 
-    // println!("Final Indicator: {:?}", indicator_2);
+    // // println!("Final Indicator: {:?}", indicator_2);
 
-    return;
+    // return;
 
     // loading::test_print_loading();
 

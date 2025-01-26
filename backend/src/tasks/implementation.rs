@@ -127,7 +127,7 @@ impl Task {
             None => FORCE_FETCH_DEFAULT,
         };
         let training_percentage = match other_parameters.get("training_percentage") {
-            Some(value) => value.as_f64().unwrap(),
+            Some(value) => value.as_f64().unwrap_or(TRAINING_PERCENTAGE_DEFAULT),
             None => TRAINING_PERCENTAGE_DEFAULT,
         };
 
@@ -161,6 +161,11 @@ impl Task {
             }
 
             kline_collections.push(kline_collection);
+
+            // Check if task was cancelled
+            if should_cancel.load(Ordering::Relaxed) {
+                return Err("Task was cancelled".to_string());
+            }
         }
 
         //

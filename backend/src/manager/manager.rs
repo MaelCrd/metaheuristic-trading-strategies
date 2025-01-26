@@ -54,6 +54,9 @@ impl TaskManager {
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
+        // Wait 3 seconds before starting
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+
         println!("Started listening for tasks...");
 
         // Periodically check for new tasks (every 2 seconds)

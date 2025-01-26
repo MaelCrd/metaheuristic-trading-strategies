@@ -1,8 +1,5 @@
+use rocket::get;
 use rocket::serde::json::Json;
-use rocket::State;
-use rocket::{get, post};
-use sqlx::PgPool;
-use sqlx::Row;
 
 use crate::metaheuristic;
 
