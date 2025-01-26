@@ -26,6 +26,7 @@
         hover
         items-per-page="-1"
       >
+        <!-- Chip for state -->
         <template v-slot:item.state="{ item }">
           <v-chip
             :color="getStateColor(item.state)"
@@ -34,6 +35,26 @@
             size="small"
             label
           />
+        </template>
+        <!-- Cancel icon button -->
+        <template v-slot:item.actions="{ item }">
+          <div class="d-flex justify-end">
+            <v-icon
+              v-if="
+                item.state.toLowerCase() !== 'completed' &&
+                item.state.toLowerCase() !== 'cancelled' &&
+                item.state.toLowerCase() !== 'cancelling' &&
+                item.state.toLowerCase() !== 'failed'
+              "
+              @click="cancelTask(item.id)"
+              class="ml-4"
+              size="24"
+              >mdi-close</v-icon
+            >
+            <v-icon @click="showTaskDetails(item.id)" class="ml-4" size="24"
+              >mdi-information-outline</v-icon
+            >
+          </div>
         </template>
       </v-data-table>
     </v-row>
@@ -105,12 +126,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Dialog to show task details -->
+    <v-dialog v-model="selectedTask" max-width="900px" opacity="0">
+      <TaskDetails
+        :task="selectedTask"
+        :crypto-lists="cryptoLists"
+        :mh-objects="mhObjects"
+        :indicators="indicators"
+      />
+    </v-dialog>
   </v-col>
 </template>
 
 <script lang="ts">
 import axios from "axios";
-import { tr } from "vuetify/locale";
 
 export default {
   name: "Tasks",
@@ -123,10 +153,17 @@ export default {
   emits: ["refresh-tasks"],
   data() {
     return {
+      // Add your component data here
       headers: [
         { title: "Created at", value: "created_at", width: "20%" },
         { title: "State", value: "state" },
-        { title: "Actions", value: "actions", sortable: false, width: "10%" },
+        {
+          title: "Actions",
+          value: "actions",
+          sortable: false,
+          width: "20%",
+          align: "end",
+        },
       ],
       dialogCreate: false,
       valid: false,
@@ -138,7 +175,7 @@ export default {
         force_fetch: false,
         training_percentage: 85,
       },
-      // Add your component data here
+      selectedTask: null,
     };
   },
   computed: {
@@ -190,6 +227,21 @@ export default {
     // handleShowHidden() {
     //   this.showHidden = !this.showHidden;
     // },
+    showTaskDetails(taskId: any) {
+      console.log("Showing task details for task ID:", taskId, this.items);
+      this.selectedTask = this.items.find((item) => item.id === taskId) || null;
+      console.log("Selected task:", this.selectedTask);
+    },
+    cancelTask(taskId: number) {
+      axios
+        .put(`http://localhost:9797/api/task/cancel?id=${taskId}`)
+        .then(() => {
+          this.$emit("refresh-tasks");
+        })
+        .catch((error) => {
+          console.error("Error canceling task:", error);
+        });
+    },
     createTask() {
       if (this.$refs.form.validate()) {
         // ex: {"mh_object_id": 4, "crypto_list_id": 2, "other_parameters": "{\"force_fetch\": false, \"training_percentage\": 0.85}", "indicator_combination_id": 1}
@@ -238,6 +290,8 @@ export default {
           return "success";
         case "failed":
           return "error";
+        case "cancelled":
+          return "warning";
       }
     },
   },
