@@ -144,6 +144,19 @@ impl TaskState {
             _ => TaskState::Created,
         }
     }
+
+    // Convert to string
+    pub fn convert_to(&self) -> String {
+        match self {
+            TaskState::Created => "CREATED".to_string(),
+            TaskState::Pending => "PENDING".to_string(),
+            TaskState::Running => "RUNNING".to_string(),
+            TaskState::Cancelling => "CANCELLING".to_string(),
+            TaskState::Cancelled => "CANCELLED".to_string(),
+            TaskState::Completed => "COMPLETED".to_string(),
+            TaskState::Failed => "FAILED".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,22 +185,22 @@ impl Task {
         }
     }
 
-    pub async fn set_state(&mut self, pool: &sqlx::PgPool, state: TaskState) {
-        match crate::interface::handlers::tasks::update_task_state(
-            &rocket::State::from(pool),
-            self.id,
-            state.clone(),
-        )
-        .await
-        {
-            Ok(_) => {
-                self.state = state;
-            }
-            Err(_) => {
-                println!("Error updating task state");
-            }
-        }
-    }
+    // pub async fn set_state(&mut self, pool: &sqlx::PgPool, state: TaskState) {
+    //     match crate::interface::handlers::tasks::update_task_state(
+    //         &rocket::State::from(pool),
+    //         self.id,
+    //         state.clone(),
+    //     )
+    //     .await
+    //     {
+    //         Ok(_) => {
+    //             self.state = state;
+    //         }
+    //         Err(_) => {
+    //             println!("Error updating task state");
+    //         }
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

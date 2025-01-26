@@ -4,8 +4,7 @@ FROM rust:1.83 AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Cargo.toml and Cargo.lock files to cache dependencies
-COPY Cargo.toml Cargo.lock ./
+
 
 # Build dependencies only to cache them
 # RUN cargo check
@@ -13,13 +12,15 @@ COPY Cargo.toml Cargo.lock ./
 
 RUN cargo install sqlx-cli --no-default-features --features postgres
 
-# Copy the project files
-COPY src ./src
-COPY .sqlx ./.sqlx
+# Copy the Cargo.toml and Cargo.lock files to cache dependencies
+COPY Cargo.toml Cargo.lock ./
 
-RUN cargo sqlx prepare --check
+# Copy the project files
+COPY .sqlx ./.sqlx
+COPY src ./src
 
 # RUN cargo sqlx prepare
+RUN cargo sqlx prepare --check
 
 # Compile the application in release mode
 RUN SQLX_OFFLINE=true cargo build --release

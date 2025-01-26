@@ -10,12 +10,16 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use super::objects::{TaskLists, ThreadStatus};
-use crate::{interface::handlers::tasks, objects::objects::TaskState};
+use crate::{
+    interface::handlers::{streams::TaskStateChannel, tasks},
+    objects::objects::TaskState,
+};
 
 const MAX_THREADS_DEFAULT: usize = 1;
 
 pub struct TaskManager {
     pub pool: Pool<Postgres>,
+    task_channel: TaskStateChannel,
     tasks_processor: TaskLists,
     statuses: Arc<Mutex<HashMap<i32, ThreadStatus>>>,
     cancel_flags: Arc<Mutex<HashMap<i32, Arc<AtomicBool>>>>,
@@ -23,9 +27,10 @@ pub struct TaskManager {
 }
 
 impl TaskManager {
-    pub fn new_with_pool(pool: Pool<Postgres>) -> Self {
+    pub fn new_with_pool(pool: Pool<Postgres>, task_channel: TaskStateChannel) -> Self {
         Self {
             pool,
+            task_channel: task_channel,
             tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
@@ -33,13 +38,14 @@ impl TaskManager {
         }
     }
 
-    pub async fn new() -> Self {
+    pub async fn new(task_channel: TaskStateChannel) -> Self {
         Self {
             pool: sqlx::postgres::PgPoolOptions::new()
                 .max_connections(5)
                 .connect(&env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
                 .await
                 .unwrap(),
+            task_channel,
             tasks_processor: TaskLists::new(),
             statuses: Arc::new(Mutex::new(HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(HashMap::new())),
@@ -75,9 +81,13 @@ impl TaskManager {
                         TaskState::Failed
                     }
                 };
-                let res =
-                    tasks::update_task_state(&rocket::State::from(&self.pool), task_id, new_state)
-                        .await;
+                let res = tasks::update_task_state(
+                    &rocket::State::from(&self.pool),
+                    &self.task_channel,
+                    task_id,
+                    new_state,
+                )
+                .await;
 
                 if res.is_ok() {
                     self.tasks_processor.remove_running_task(task_id);
@@ -190,6 +200,7 @@ impl TaskManager {
         // Start the task
         let res = tasks::update_task_state(
             &rocket::State::from(&self.pool),
+            &self.task_channel,
             task_id,
             TaskState::Running,
         )
@@ -227,6 +238,7 @@ impl TaskManager {
         // Set the task state to cancelled
         let res = tasks::update_task_state(
             &rocket::State::from(&self.pool),
+            &self.task_channel,
             task_id,
             TaskState::Cancelled,
         )
@@ -249,9 +261,13 @@ impl TaskManager {
         // So : task failed
 
         // Set the task state to failed
-        let res =
-            tasks::update_task_state(&rocket::State::from(&self.pool), task_id, TaskState::Failed)
-                .await;
+        let res = tasks::update_task_state(
+            &rocket::State::from(&self.pool),
+            &self.task_channel,
+            task_id,
+            TaskState::Failed,
+        )
+        .await;
 
         if res.is_ok() {
             // Remove the task from the running list

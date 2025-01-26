@@ -16,17 +16,17 @@ pub async fn health_check() -> Json<Status> {
     })
 }
 
-/// Produce an infinite series of `"hello"`s, one per second.
-#[get("/infinite-hellos")]
-pub fn hello() -> TextStream![&'static str] {
-    TextStream! {
-        let mut interval = interval(Duration::from_secs(1));
-        loop {
-            yield "hello\n";
-            interval.tick().await;
-        }
-    }
-}
+// /// Produce an infinite series of `"hello"`s, one per second.
+// #[get("/infinite-hellos")]
+// pub fn hello() -> TextStream![&'static str] {
+//     TextStream! {
+//         let mut interval = interval(Duration::from_secs(1));
+//         loop {
+//             yield "hello\n";
+//             interval.tick().await;
+//         }
+//     }
+// }
 
 // Define a route to purge all crypto lists, MH objects, and tasks that are hidden and have no dependencies
 #[delete("/purge-hidden-orphans")]

@@ -4,4 +4,5 @@ pub mod general;
 pub mod indicators;
 pub mod mh_algorithms;
 pub mod mh_objects;
+pub mod streams;
 pub mod tasks;

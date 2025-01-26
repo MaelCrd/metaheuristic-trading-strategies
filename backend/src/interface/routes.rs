@@ -4,7 +4,7 @@ use rocket::{routes, Route};
 pub fn get_routes() -> Vec<Route> {
     routes![
         // General
-        general::hello,
+        // general::hello,
         general::health_check,
         general::purge_hidden_orphans,
         // Crypto Symbols
@@ -30,5 +30,7 @@ pub fn get_routes() -> Vec<Route> {
         indicators::get_indicators_in_combination,
         indicators::get_indicator_combinations,
         indicators::create_indicator_combination,
+        // Streams
+        streams::hello,
     ]
 }

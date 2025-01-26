@@ -6,6 +6,8 @@ use sqlx::PgPool;
 use crate::objects::objects::{CreateTask, Task, TaskState};
 use crate::utils;
 
+use super::streams::TaskStateChannel;
+
 // Define a route to get all tasks
 #[get("/task?<id>")]
 pub async fn get_tasks(
@@ -180,6 +182,7 @@ pub async fn cancel_task(
 // Not routes, but functions to be used by the manager
 pub async fn update_task_state(
     pool: &State<PgPool>,
+    channel: &TaskStateChannel,
     id: i32,
     state: TaskState,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -190,7 +193,7 @@ pub async fn update_task_state(
         WHERE id = $1 AND state != $2
         "#,
         id,
-        state as TaskState
+        state.clone() as TaskState
     )
     .execute(&**pool)
     .await
@@ -204,6 +207,9 @@ pub async fn update_task_state(
             );
             Err("Task not found or already in the desired state".into())
         }
-        _ => Ok(()),
+        _ => {
+            let _ = channel.sender.send(state.convert_to());
+            Ok(())
+        }
     }
 }
