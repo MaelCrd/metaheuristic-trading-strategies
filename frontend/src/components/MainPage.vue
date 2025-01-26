@@ -56,6 +56,8 @@
           </v-card-text>
           <v-divider /> -->
 
+          <p>{{ streamData }}</p>
+
           <!-- <v-btn color="primary" class="ma-8" @click="fetchData">Refresh</v-btn> -->
 
           <CryptoSymbols
@@ -279,6 +281,40 @@ const fetchData = async () => {
 fetchData();
 
 handleNavigation("indicators");
+
+const streamData = ref<string[]>([]);
+const isLoading = ref(true);
+const error = ref<Error | null>(null);
+
+const fetchStream = async () => {
+  console.log("Fetching stream data");
+  try {
+    const response = await fetch("http://localhost:9797/api/infinite-hellos");
+
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      streamData.value.push(chunk);
+    }
+
+    isLoading.value = false;
+  } catch (err) {
+    error.value = err instanceof Error ? err : new Error("Unknown error");
+    isLoading.value = false;
+  }
+};
+
+fetchStream();
 </script>
 
 <style scoped>

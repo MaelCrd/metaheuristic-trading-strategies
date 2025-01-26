@@ -123,7 +123,6 @@
                 :disabled="
                   !valid || selectedSymbols.length === 0 || !intervalSelected
                 "
-                type="submit"
                 @click="createList"
               >
                 Create
