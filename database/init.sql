@@ -84,46 +84,6 @@ CREATE TABLE IF NOT EXISTS indicator_in_combination (
     FOREIGN KEY (indicator_combination_id) REFERENCES indicator_combination(id)
 );
 
----------------------------------------------------------------
--- Triggers
-
--- Create trigger function to notify new task
-CREATE OR REPLACE FUNCTION notify_task_changes()
-RETURNS trigger AS $$
-DECLARE
-    notification json;
-BEGIN
-    -- Construct the notification payload based on the operation
-    CASE TG_OP
-    WHEN 'INSERT' THEN
-        notification = json_build_object(
-            'operation', 'Insert',
-            'task_id', NEW.id,
-            'state', NEW.state,
-            'created_at', NEW.created_at
-        );
-    WHEN 'UPDATE' THEN
-        notification = json_build_object(
-            'operation', 'Update',
-            'task_id', NEW.id,
-            'state', NEW.state,
-            'created_at', NEW.created_at
-        );
-    END CASE;
-
-    -- Notify all listeners
-    PERFORM pg_notify('task_changes', notification::text);
-    
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create triggers for INSERT, UPDATE, and DELETE
-CREATE TRIGGER task_changes_trigger
-    AFTER INSERT OR UPDATE OR DELETE ON task
-    FOR EACH ROW
-    EXECUTE FUNCTION notify_task_changes();
-
 
 ---------------------------------------------------------------
 
