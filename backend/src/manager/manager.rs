@@ -69,7 +69,9 @@ impl TaskManager {
 
     async fn check_completed_start_pending(&self) {
         // When a task is completed, it should be removed from the pending list
-        let running_tasks = self.tasks_processor.get_running_tasks();
+        let mut running_tasks = self.tasks_processor.get_running_tasks();
+        let cancelling_tasks = self.tasks_processor.get_cancelling_tasks();
+        running_tasks.extend(cancelling_tasks.clone());
         for (task_id, status) in self.get_all_statuses() {
             println!("Task ID: {}, Status: {:?}", task_id, status);
             if running_tasks.contains(&task_id) && status.is_complete {
@@ -79,10 +81,16 @@ impl TaskManager {
                         // Set the task state to completed
                         TaskState::Completed
                     }
-                    false => {
-                        // Set the task state to failed
-                        TaskState::Failed
-                    }
+                    false => match cancelling_tasks.contains(&task_id) {
+                        true => {
+                            // Set the task state to cancelled
+                            TaskState::Cancelled
+                        }
+                        false => {
+                            // Set the task state to failed
+                            TaskState::Failed
+                        }
+                    },
                 };
                 let res = tasks::update_task_state(
                     &rocket::State::from(&self.pool),
@@ -236,20 +244,6 @@ impl TaskManager {
             if let Some(flag) = self.cancel_flags.lock().unwrap().get(&task_id) {
                 flag.store(true, Ordering::SeqCst);
             }
-        }
-
-        // Set the task state to cancelled
-        let res = tasks::update_task_state(
-            &rocket::State::from(&self.pool),
-            &self.task_channel,
-            task_id,
-            TaskState::Cancelled,
-        )
-        .await;
-        if res.is_ok() {
-            // Remove the task from the cancelling list
-            self.tasks_processor.remove_cancelling_task(task_id);
-            println!("Task cancelled - ID: {}", task_id);
         }
 
         Ok(())

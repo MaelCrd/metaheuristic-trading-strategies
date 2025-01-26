@@ -165,6 +165,8 @@ impl Task {
             // Check if task was cancelled
             if should_cancel.load(Ordering::Relaxed) {
                 return Err("Task was cancelled".to_string());
+            } else {
+                println!("Task not cancelled, continuing with next crypto symbol (if any)");
             }
         }
 
