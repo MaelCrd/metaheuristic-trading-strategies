@@ -214,6 +214,7 @@ export default {
             this.taskParameters = {
               queue: true,
               force_fetch: false,
+              training_percentage: 85,
             };
             this.selectedCryptoList = null;
             this.selectedMHObject = null;
@@ -226,16 +227,16 @@ export default {
       }
     },
     getStateColor(state: string) {
-      switch (state) {
-        case "Created":
+      switch (state.toLowerCase()) {
+        case "created":
           return "info";
-        case "Pending":
+        case "pending":
           return "info";
-        case "Running":
+        case "running":
           return "primary";
-        case "Completed":
+        case "completed":
           return "success";
-        case "Failed":
+        case "failed":
           return "error";
       }
     },

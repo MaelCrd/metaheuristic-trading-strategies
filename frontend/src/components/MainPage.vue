@@ -56,8 +56,6 @@
           </v-card-text>
           <v-divider /> -->
 
-          <p>{{ streamData }}</p>
-
           <!-- <v-btn color="primary" class="ma-8" @click="fetchData">Refresh</v-btn> -->
 
           <CryptoSymbols
@@ -90,6 +88,7 @@
             @refresh-tasks="handleRefreshTasks"
           />
         </v-card>
+        <!-- <p>{{ streamData }}</p> -->
       </v-col>
     </v-row>
   </v-grid>
@@ -280,7 +279,7 @@ const fetchData = async () => {
 
 fetchData();
 
-handleNavigation("indicators");
+handleNavigation("tasks");
 
 const streamData = ref<string[]>([]);
 const isLoading = ref(true);
@@ -289,7 +288,7 @@ const error = ref<Error | null>(null);
 const fetchStream = async () => {
   console.log("Fetching stream data");
   try {
-    const response = await fetch("http://localhost:9797/api/infinite-hellos");
+    const response = await fetch("http://localhost:9797/api/task-updates");
 
     if (!response.body) {
       throw new Error("No response body");
@@ -305,6 +304,24 @@ const fetchStream = async () => {
 
       const chunk = decoder.decode(value);
       streamData.value.push(chunk);
+
+      // Receive data ex: {"task_id": 1, "state": "running"}
+      console.log(chunk);
+      try {
+        const data = JSON.parse(chunk);
+        console.log(data);
+
+        // Find the task in the tasks list
+        const task = tasks.value.find((task) => task.id === data.task_id);
+        if (task) {
+          task.state = data.state;
+
+          // Update the task in the tasks list
+          tasks.value = [...tasks.value];
+        }
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+      }
     }
 
     isLoading.value = false;
