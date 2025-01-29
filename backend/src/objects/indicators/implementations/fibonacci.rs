@@ -32,6 +32,10 @@ impl FibonacciRetracement {
 }
 
 impl IndicatorTrait for FibonacciRetracement {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![format!("i_FR_{:?}", self.period).to_lowercase()]
     }

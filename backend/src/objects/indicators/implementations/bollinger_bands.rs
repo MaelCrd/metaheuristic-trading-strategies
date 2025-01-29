@@ -45,6 +45,10 @@ impl BollingerBands {
 }
 
 impl IndicatorTrait for BollingerBands {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![
             format!("i_BB_{:?}_{:?}_upper", self.period, self.deviation).to_lowercase(),

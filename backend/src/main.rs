@@ -20,7 +20,7 @@ use backend::interface::rocket;
 // use backend::utils::loading;
 // use backend::binance;
 use backend::manager;
-// use backend::metaheuristic::mh;
+use backend::metaheuristic::mh;
 
 use backend::interface::handlers::streams;
 
@@ -28,12 +28,6 @@ use backend::interface::handlers::streams;
 async fn main() {
     // Load the environment variables from the .env file
     assert!(dotenv().is_ok());
-
-    // let args: Vec<String> = env::args().collect();
-    // let minutes = args[1].parse::<i64>().unwrap();
-    // let force_fetch = args[2].parse::<bool>().unwrap();
-
-    //
 
     // Create the Rocket application
     let rocket_app = rocket::rocket();
@@ -56,22 +50,6 @@ async fn main() {
     // Run the Rocket application
     rocket_app.launch().await.unwrap();
 
-    // let f2 = rocket_app.launch();
-    // let f1 = task_manager.start();
-
-    // let (res1, res2) = futures::join!(f1, f2);
-
-    // if let Err(e) = res1 {
-    //     eprintln!("Error in task manager: {:?}", e);
-    // }
-
-    // if let Err(e) = res2 {
-    //     eprintln!("Error in rocket app: {:?}", e);
-    // }
-
-    // // Run the Rocket application
-    // rocket_app.launch().await.unwrap();
-
     return;
 
     //
@@ -79,6 +57,7 @@ async fn main() {
     //
 
     // mh::mh_nsga_ii();
+    // mh::mh_descent();
 
     // return;
 

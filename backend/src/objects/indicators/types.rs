@@ -18,6 +18,9 @@ pub enum Indicator {
 }
 
 pub trait IndicatorTrait {
+    // Returns the info
+    fn information(&self) -> IndicatorInformation;
+
     // Returns the column names of the indicator
     fn column_names(&self) -> Vec<String>;
 

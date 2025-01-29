@@ -32,6 +32,10 @@ impl OnBalanceVolume {
 }
 
 impl IndicatorTrait for OnBalanceVolume {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![format!("i_OBV_{:?}", self.period).to_lowercase()]
     }

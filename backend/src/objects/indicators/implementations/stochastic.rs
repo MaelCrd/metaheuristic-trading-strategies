@@ -42,6 +42,10 @@ impl StochasticOscillator {
 }
 
 impl IndicatorTrait for StochasticOscillator {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![
             format!("i_SO_{:?}_{:?}_k", self.k_period, self.d_period).to_lowercase(),

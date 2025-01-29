@@ -1,18 +1,21 @@
 use serde::{Deserialize, Serialize};
 
+use super::descent::MultiObjectiveDescent;
 use super::nsga2::NSGAII;
 
 /// Represents a variable in the optimization problem
 #[derive(Clone, Debug)]
 pub enum Variable {
     Float(f64),
+    Integer(i64),
     Boolean(bool),
 }
 
 /// Defines the bounds and type for each variable
 #[derive(Clone, Debug)]
 pub enum VariableDefinition {
-    Float(f64, f64), // (min, max)
+    Float(f64, f64),   // (min, max)
+    Integer(i64, i64), // (min, max)
     Boolean,
 }
 
@@ -41,6 +44,7 @@ impl Solution {
             .iter()
             .map(|v| match v {
                 Variable::Float(f) => f.to_string(),
+                Variable::Integer(i) => i.to_string(),
                 Variable::Boolean(b) => b.to_string(),
             })
             .collect::<Vec<String>>()
@@ -76,11 +80,12 @@ pub struct MetaheuristicInfo {
 #[derive(Clone, Debug)]
 pub enum Metaheuristic {
     NSGAII(NSGAII),
+    MultiObjectiveDescent(MultiObjectiveDescent),
 }
 
 impl Metaheuristic {
     pub fn get_all_info() -> Vec<MetaheuristicInfo> {
-        vec![NSGAII::get_info()]
+        vec![NSGAII::get_info(), MultiObjectiveDescent::get_info()]
     }
 }
 
@@ -99,6 +104,9 @@ impl MetaheuristicTrait for Metaheuristic {
         evaluate: impl Fn(&[Variable]) -> Vec<f64> + Clone + Sync + Send,
     ) -> Vec<Solution> {
         match self {
+            Metaheuristic::MultiObjectiveDescent(simple_descent) => {
+                simple_descent.run(num_generations, evaluate)
+            }
             Metaheuristic::NSGAII(nsga2) => nsga2.run(num_generations, evaluate),
         }
     }

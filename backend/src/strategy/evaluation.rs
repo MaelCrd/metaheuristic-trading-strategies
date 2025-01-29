@@ -1,5 +1,10 @@
-use crate::metaheuristic::{Metaheuristic, VariableDefinition, NSGAII};
-use crate::objects::{indicators::Indicator, klines::KlineCollection, objects::MHObject};
+use serde_json::Number;
+
+use crate::metaheuristic::{Metaheuristic, MultiObjectiveDescent, VariableDefinition, NSGAII};
+use crate::objects::indicators::IndicatorTrait;
+use crate::objects::{
+    criteria::Criterion, indicators::Indicator, klines::KlineCollection, objects::MHObject,
+};
 
 // Evaluation of the strategy
 pub fn evaluate(
@@ -19,29 +24,27 @@ pub fn evaluate(
     let algorithm_name = mh_object.mh_algorithm_name.clone();
     let algorithm_parameters: serde_json::Value =
         serde_json::from_str(&mh_object.mh_parameters).unwrap();
-    let population_size_option = algorithm_parameters.get("population_size");
-    let mutation_rate_option = algorithm_parameters.get("mutation_rate");
-    let crossover_rate_option = algorithm_parameters.get("crossover_rate");
-    if population_size_option.is_none()
-        || mutation_rate_option.is_none()
-        || crossover_rate_option.is_none()
-    {
-        println!("-> Missing parameters for the algorithm");
-        return Err("Missing parameters for the algorithm".to_string());
-    }
+
+    println!("Parameters: {:?}", algorithm_parameters);
 
     // Create variable definitions for the algorithm (variables to optimize, in this case, the indicators)
     let mut variable_definitions: Vec<VariableDefinition> = Vec::new();
+    for indicator in indicators {
+        let parameters = indicator.information().parameters;
+        for param in parameters {
+            println!("Indicator parameter: {:?}", param.r#type);
+        }
+    }
 
     // Create algorithm
     let algorithm = match algorithm_name.as_str() {
-        "NSGA-II" => Metaheuristic::NSGAII(NSGAII::new(
-            population_size_option.unwrap().as_u64().unwrap() as usize,
-            variable_definitions,
-            3,
-            mutation_rate_option.unwrap().as_f64().unwrap(),
-            crossover_rate_option.unwrap().as_f64().unwrap(),
-        )),
+        "NSGA-II" => {
+            let algo = NSGAII::new_from_json(&algorithm_parameters, variable_definitions, 3);
+            if algo.is_err() {
+                return Err("Error creating NSGA-II algorithm".to_string());
+            }
+            Metaheuristic::NSGAII(algo.unwrap())
+        }
         _ => {
             println!("-> Unknown algorithm: {}", algorithm_name);
             return Err("Unknown algorithm".to_string());

@@ -52,6 +52,10 @@ impl IchimokuCloud {
 }
 
 impl IndicatorTrait for IchimokuCloud {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![
             format!(

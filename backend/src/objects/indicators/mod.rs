@@ -13,6 +13,20 @@ pub use types::*;
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 impl IndicatorTrait for Indicator {
+    fn information(&self) -> IndicatorInformation {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.information(),
+            Indicator::ExponentialMovingAverage(indicator) => indicator.information(),
+            Indicator::RelativeStrengthIndex(indicator) => indicator.information(),
+            Indicator::MovingAverageConvergenceDivergence(indicator) => indicator.information(),
+            Indicator::BollingerBands(indicator) => indicator.information(),
+            Indicator::FibonacciRetracement(indicator) => indicator.information(),
+            Indicator::StochasticOscillator(indicator) => indicator.information(),
+            Indicator::OnBalanceVolume(indicator) => indicator.information(),
+            Indicator::IchimokuCloud(indicator) => indicator.information(),
+        }
+    }
+
     fn column_names(&self) -> Vec<String> {
         match self {
             Indicator::MovingAverage(indicator) => indicator.column_names(),

@@ -57,6 +57,10 @@ impl MovingAverageConvergenceDivergence {
 }
 
 impl IndicatorTrait for MovingAverageConvergenceDivergence {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![
             format!(

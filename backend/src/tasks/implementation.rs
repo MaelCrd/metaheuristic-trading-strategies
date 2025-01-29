@@ -186,8 +186,9 @@ impl Task {
             }
             Err(e) => {
                 println!("[TASK {:?}] Error evaluating MHObject: {:?}", self.id, e);
+                return Err("Error evaluating MHObject".to_string());
             }
-        }
+        };
 
         // Dummy task
         // let mut i: i64 = 0;

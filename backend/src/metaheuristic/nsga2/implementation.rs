@@ -38,6 +38,49 @@ impl NSGAII {
         }
     }
 
+    pub fn new_from_json(
+        json: &serde_json::Value,
+        variable_definitions: Vec<VariableDefinition>,
+        num_objectives: usize,
+    ) -> Result<Self, String> {
+        let population_size_option = json.get("population_size");
+        let mutation_rate_option = json.get("mutation_rate");
+        let crossover_rate_option = json.get("crossover_rate");
+        if population_size_option.is_none()
+            || mutation_rate_option.is_none()
+            || crossover_rate_option.is_none()
+        {
+            return Err("Missing parameters for the algorithm".to_string());
+        }
+
+        let population_size = population_size_option
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse::<usize>();
+        let mutation_rate = mutation_rate_option
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse::<f64>();
+        let crossover_rate = crossover_rate_option
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse::<f64>();
+        if !population_size.is_ok() || !mutation_rate.is_ok() || !crossover_rate.is_ok() {
+            return Err("Invalid parameters for the algorithm".to_string());
+        }
+
+        Ok(NSGAII {
+            population_size: population_size.unwrap(),
+            variable_definitions: variable_definitions,
+            num_objectives: num_objectives,
+            mutation_rate: mutation_rate.unwrap(),
+            crossover_rate: crossover_rate.unwrap(),
+        })
+    }
+
     pub fn get_info() -> MetaheuristicInfo {
         MetaheuristicInfo {
             name: "NSGA-II".to_string(),
@@ -83,6 +126,9 @@ impl NSGAII {
                 .map(|def| match def {
                     VariableDefinition::Float(min, max) => {
                         Variable::Float(rng.gen_range(*min..*max))
+                    }
+                    VariableDefinition::Integer(min, max) => {
+                        Variable::Integer(rng.gen_range(*min..=*max))
                     }
                     VariableDefinition::Boolean => Variable::Boolean(rng.gen_bool(0.5)),
                 })
@@ -266,6 +312,42 @@ impl NSGAII {
                             }
                         }
                     }
+                    VariableDefinition::Integer(min, max) => {
+                        if rng.gen::<f64>() < 0.5 {
+                            if let (Variable::Integer(y1), Variable::Integer(y2)) =
+                                (&parent1.variables[i], &parent2.variables[i])
+                            {
+                                let y1_f = *y1 as f64;
+                                let y2_f = *y2 as f64;
+                                let min_f = *min as f64;
+                                let max_f = *max as f64;
+
+                                let beta = if y1_f < y2_f {
+                                    1.0 + (2.0 * (y1_f - min_f) / (y2_f - y1_f))
+                                } else {
+                                    1.0 + (2.0 * (max_f - y1_f) / (y1_f - y2_f))
+                                };
+
+                                let alpha = 2.0 - beta.powf(-eta_c - 1.0);
+                                let rand = rng.gen::<f64>();
+                                let betaq = if rand <= 1.0 / alpha {
+                                    (rand * alpha).powf(1.0 / (eta_c + 1.0))
+                                } else {
+                                    (1.0 / (2.0 - rand * alpha)).powf(1.0 / (eta_c + 1.0))
+                                };
+
+                                let c1 = 0.5 * ((y1_f + y2_f) - betaq * (y2_f - y1_f));
+                                let c2 = 0.5 * ((y1_f + y2_f) + betaq * (y2_f - y1_f));
+
+                                // Round to nearest integer and clamp to bounds
+                                let c1_int = (c1.round() as i64).clamp(*min, *max);
+                                let c2_int = (c2.round() as i64).clamp(*min, *max);
+
+                                child1.variables[i] = Variable::Integer(c1_int);
+                                child2.variables[i] = Variable::Integer(c2_int);
+                            }
+                        }
+                    }
                     VariableDefinition::Boolean => {
                         // For boolean variables, randomly swap between parents
                         if rng.gen::<f64>() < 0.5 {
@@ -307,6 +389,34 @@ impl NSGAII {
 
                             let mutated = y + deltaq * (max - min);
                             solution.variables[i] = Variable::Float(mutated.clamp(*min, *max));
+                        }
+                    }
+                    VariableDefinition::Integer(min, max) => {
+                        if let Variable::Integer(y) = solution.variables[i] {
+                            let y_f = y as f64;
+                            let min_f = *min as f64;
+                            let max_f = *max as f64;
+
+                            let delta1 = (y_f - min_f) / (max_f - min_f);
+                            let delta2 = (max_f - y_f) / (max_f - min_f);
+                            let rnd = rng.gen::<f64>();
+                            let deltaq;
+
+                            if rnd <= 0.5 {
+                                let xy = 1.0 - delta1;
+                                let val = 2.0 * rnd + (1.0 - 2.0 * rnd) * xy.powf(eta_m + 1.0);
+                                deltaq = val.powf(1.0 / (eta_m + 1.0)) - 1.0;
+                            } else {
+                                let xy = 1.0 - delta2;
+                                let val =
+                                    2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * xy.powf(eta_m + 1.0);
+                                deltaq = 1.0 - val.powf(1.0 / (eta_m + 1.0));
+                            }
+
+                            let mutated_f = y_f + deltaq * (max_f - min_f);
+                            // Round to nearest integer and clamp to bounds
+                            let mutated = (mutated_f.round() as i64).clamp(*min, *max);
+                            solution.variables[i] = Variable::Integer(mutated);
                         }
                     }
                     VariableDefinition::Boolean => {

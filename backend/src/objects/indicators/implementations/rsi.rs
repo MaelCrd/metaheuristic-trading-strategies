@@ -32,6 +32,10 @@ impl RelativeStrengthIndex {
 }
 
 impl IndicatorTrait for RelativeStrengthIndex {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![format!("i_RSI_{:?}", self.period).to_lowercase()]
     }

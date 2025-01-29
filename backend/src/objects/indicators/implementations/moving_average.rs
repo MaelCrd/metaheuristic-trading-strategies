@@ -32,6 +32,10 @@ impl MovingAverage {
 }
 
 impl IndicatorTrait for MovingAverage {
+    fn information(&self) -> IndicatorInformation {
+        Self::information()
+    }
+
     fn column_names(&self) -> Vec<String> {
         vec![format!("i_MA_{:?}", self.period).to_lowercase()]
     }
