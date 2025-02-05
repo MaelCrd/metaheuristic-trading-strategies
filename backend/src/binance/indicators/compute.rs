@@ -16,7 +16,7 @@ pub async fn compute_indicator(
     indicator.calculate(kline_collection);
 
     //
-    println!("Indicator values: {:?}", indicator);
+    // println!("Indicator values: {:?}", indicator);
 
     // Insert the indicator values into the database
     let values: Vec<&Vec<Option<f64>>> = indicator.get_values();

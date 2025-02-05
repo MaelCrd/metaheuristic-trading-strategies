@@ -5,6 +5,7 @@ use crate::objects::{
     criteria::Criterion,
     indicators::{
         ExponentialMovingAverage, IndicatorInformation, IndicatorParameter, IndicatorTrait,
+        Variable,
     },
     klines::KlineCollection,
 };
@@ -82,5 +83,14 @@ impl IndicatorTrait for ExponentialMovingAverage {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let period = match parameters[0] {
+            Variable::Integer(v) => v,
+            _ => panic!("Invalid parameter type"),
+        };
+
+        Self::new(period as i32)
     }
 }

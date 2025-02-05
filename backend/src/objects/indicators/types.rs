@@ -2,7 +2,7 @@ use serde::Serialize;
 use sqlx::postgres::PgRow;
 
 use crate::binance;
-use crate::metaheuristic::VariableDefinition;
+use crate::metaheuristic::{Variable, VariableDefinition};
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ pub trait IndicatorTrait {
                 ),
                 "integer" => VariableDefinition::Integer(
                     parameter.min.unwrap_or("0".to_string()).parse().unwrap(),
-                    parameter.max.unwrap_or("400".to_string()).parse().unwrap(),
+                    parameter.max.unwrap_or("40".to_string()).parse().unwrap(),
                 ),
                 "boolean" => VariableDefinition::Boolean,
                 _ => VariableDefinition::Float(0.0, 0.0),
@@ -93,6 +93,9 @@ pub trait IndicatorTrait {
 
     // Get the count of criteria
     fn get_criteria_count(&self) -> i32;
+
+    // Clone but with new parameters
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self;
 }
 
 impl Indicator {

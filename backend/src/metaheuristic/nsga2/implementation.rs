@@ -489,13 +489,16 @@ impl NSGAII {
     {
         let mut population = self.initialize_population();
 
+        // println!("Currently have issues with parallel evaluation");
+        // return vec![];
+
         // Evaluate initial population
         // for solution in &mut population {
         //     solution.objectives = evaluate(&solution.variables);
         // }
 
         // Parallel evaluation of initial population
-        population.par_iter_mut().for_each(|solution| {
+        population.iter_mut().for_each(|solution| {
             solution.objectives = evaluate(
                 &solution.variables,
                 kline_collections,
@@ -531,7 +534,7 @@ impl NSGAII {
             // let offspring = self.generate_offspring_parallel(&population, evaluate.clone().into());
 
             // Parallel evaluation of offspring
-            offspring.par_iter_mut().for_each(|child| {
+            offspring.iter_mut().for_each(|child| {
                 child.objectives = evaluate(
                     &child.variables,
                     kline_collections,

@@ -6,6 +6,7 @@ use std::sync::{
 use crate::interface::handlers;
 use crate::objects::{indicators, klines::KlineCollection, objects::Task};
 use crate::strategy;
+use crate::tasks::implementation::indicators::IndicatorTrait;
 
 const FORCE_FETCH_DEFAULT: bool = false;
 const TRAINING_PERCENTAGE_DEFAULT: f64 = 0.8;
@@ -136,6 +137,17 @@ impl Task {
             return Err("limit_minutes must be at least 10 times the interval".to_string());
         }
 
+        // Get the indicators that need the most n_before values
+        let biggest_n_before_indicator = indicators
+            .iter()
+            .max_by(|a, b| a.n_before_needed().cmp(&b.n_before_needed()))
+            .unwrap();
+
+        println!(
+            "[TASK {:?}] Biggest n_before indicator: {:?}",
+            self.id, biggest_n_before_indicator
+        );
+
         // Kline Collections
         let mut kline_collections: Vec<KlineCollection> = vec![];
         kline_collections.reserve(crypto_symbols.len());
@@ -155,6 +167,19 @@ impl Task {
                 Err(e) => {
                     println!(
                         "[TASK {:?}] Error retrieving KlineCollection for {:?}: {:?}",
+                        self.id, crypto_symbol, e
+                    );
+                }
+            }
+
+            match kline_collection
+                .retrieve_extended_klines(&biggest_n_before_indicator)
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    println!(
+                        "[TASK {:?}] Error retrieving extended KlineCollection for {:?}: {:?}",
                         self.id, crypto_symbol, e
                     );
                 }

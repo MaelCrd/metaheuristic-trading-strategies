@@ -1,10 +1,12 @@
 use sqlx::postgres::PgRow;
 use sqlx::Row;
 
+use crate::metaheuristic::Variable;
 use crate::objects::{
     criteria::{CompareCriterion, Criterion, CrossCriterion},
     indicators::{
-        IndicatorInformation, IndicatorParameter, IndicatorTrait, MovingAverage, VariableDefinition,
+        Indicator, IndicatorInformation, IndicatorParameter, IndicatorTrait, MovingAverage,
+        VariableDefinition,
     },
     klines::KlineCollection,
 };
@@ -29,7 +31,7 @@ impl MovingAverage {
                 description: "The period of the moving average".to_string(),
                 r#type: "integer".to_string(),
                 default: "20".to_string(),
-                min: Some("1".to_string()),
+                min: Some("2".to_string()),
                 max: None,
             }],
         }
@@ -76,7 +78,13 @@ impl IndicatorTrait for MovingAverage {
             let index = kline_collection.get_length() - 1 - i;
             let mut sum = 0.0;
             for j in 0..self.period {
-                // println!("i: {}, j: {}, i+j {}", i, j, i + j);
+                // println!(
+                //     "i: {}, j: {}, i+j {}, index + j: {}",
+                //     i,
+                //     j,
+                //     i + j,
+                //     index + j
+                // );
                 sum += kline_collection.get_rev(index + j).unwrap().close;
             }
             // println!("Set at index: {}", *i as usize);
@@ -131,5 +139,13 @@ impl IndicatorTrait for MovingAverage {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let period = match parameters[0] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        Self::new(period as i32)
     }
 }

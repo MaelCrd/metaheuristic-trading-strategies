@@ -3,7 +3,9 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IchimokuCloud, IndicatorInformation, IndicatorParameter, IndicatorTrait},
+    indicators::{
+        IchimokuCloud, IndicatorInformation, IndicatorParameter, IndicatorTrait, Variable,
+    },
     klines::KlineCollection,
 };
 
@@ -149,5 +151,25 @@ impl IndicatorTrait for IchimokuCloud {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let conversion_period = match parameters[0] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        let base_period = match parameters[1] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        let lagging_span = match parameters[2] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        Self::new(
+            conversion_period as i32,
+            base_period as i32,
+            lagging_span as i32,
+        )
     }
 }

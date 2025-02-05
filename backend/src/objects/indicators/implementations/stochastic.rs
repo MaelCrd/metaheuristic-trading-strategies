@@ -3,7 +3,9 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, StochasticOscillator},
+    indicators::{
+        IndicatorInformation, IndicatorParameter, IndicatorTrait, StochasticOscillator, Variable,
+    },
     klines::KlineCollection,
 };
 
@@ -150,5 +152,17 @@ impl IndicatorTrait for StochasticOscillator {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let k_period = match parameters[0] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        let d_period = match parameters[1] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        Self::new(k_period as i32, d_period as i32)
     }
 }

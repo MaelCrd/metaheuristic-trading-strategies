@@ -3,7 +3,9 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::Criterion,
-    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, RelativeStrengthIndex},
+    indicators::{
+        IndicatorInformation, IndicatorParameter, IndicatorTrait, RelativeStrengthIndex, Variable,
+    },
     klines::KlineCollection,
 };
 
@@ -80,5 +82,14 @@ impl IndicatorTrait for RelativeStrengthIndex {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let period = match parameters[0] {
+            Variable::Integer(period) => period,
+            _ => panic!("Invalid parameter type"),
+        };
+
+        Self::new(period as i32)
     }
 }

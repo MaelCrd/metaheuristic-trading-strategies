@@ -5,7 +5,8 @@ use crate::metaheuristic::{
 };
 use crate::objects::indicators::IndicatorTrait;
 use crate::objects::{
-    criteria::Criterion, indicators::Indicator, klines::KlineCollection, objects::MHObject,
+    criteria::Criterion, criteria::CriterionTrait, indicators::Indicator, klines::KlineCollection,
+    objects::MHObject,
 };
 
 pub fn backtest(
@@ -35,9 +36,48 @@ pub fn backtest(
 
     println!("-> Backtesting with variables: {:?}", vars);
 
+    let mut sum = 0;
+
     let mut j = 0;
     for (i, indicator) in indicators.iter().enumerate() {
         let variable_definitions = &variable_definitions_sep[i];
+
+        // Create the indicator
+        let vars_indicator = vars[j..j + variable_definitions.len()].to_vec();
+        let mut indicator_cloned = indicator.clone_with_new_parameters(&vars_indicator);
+
+        let mut kline_collection_cloned = kline_collections[0].clone();
+
+        let res = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(kline_collection_cloned.retrieve_extended_klines(&indicator_cloned))
+        });
+        // println!("Result: {:?}", res);
+
+        // println!("Kline collection cloned:");
+        // kline_collection_cloned.display();
+
+        let res = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(indicator_cloned.retrieve(&kline_collection_cloned))
+        });
+
+        indicator_cloned.calculate_criteria(&kline_collection_cloned);
+
+        //
+
+        let criterion = &indicator_cloned.get_criteria()[0];
+
+        sum += criterion
+            .get_values()
+            .iter()
+            .map(|x| if *x { 1 } else { 0 })
+            .sum::<i32>();
+
+        // println!("Criterion: {:?}", criterion);
+
+        break;
+
         for variable_definition in variable_definitions {
             // Get the variable value
             let variable = &vars[j];
@@ -55,7 +95,9 @@ pub fn backtest(
         }
     }
 
-    vec![0.0, 0.0, 0.0]
+    println!("-> Sum: {}", sum);
+
+    vec![sum as f64, 0.0, 0.0]
 }
 
 // Evaluation of the strategy
@@ -120,7 +162,7 @@ pub fn evaluate(
     println!("-> Algorithm: {:?}", algorithm);
 
     let final_solutions = algorithm.run(
-        2,
+        20,
         backtest,
         &kline_collections,
         &indicators,

@@ -113,7 +113,11 @@ pub async fn retrieve_klines(
     if additional_klines != None {
         only_before = Some(klines_collection.get_first_past_open_time());
         limit = additional_klines.unwrap() as i64 - klines_collection.past.len() as i64;
-        klines_collection.past.reserve(limit as usize);
+        if limit <= 0 {
+            limit = 0;
+        } else {
+            klines_collection.past.reserve(limit as usize);
+        }
     }
 
     let before_cond = match only_before {

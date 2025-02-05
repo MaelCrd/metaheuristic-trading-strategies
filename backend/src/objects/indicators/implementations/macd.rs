@@ -5,7 +5,7 @@ use crate::objects::{
     criteria::Criterion,
     indicators::{
         IndicatorInformation, IndicatorParameter, IndicatorTrait,
-        MovingAverageConvergenceDivergence,
+        MovingAverageConvergenceDivergence, Variable,
     },
     klines::KlineCollection,
 };
@@ -135,5 +135,25 @@ impl IndicatorTrait for MovingAverageConvergenceDivergence {
 
     fn get_criteria_count(&self) -> i32 {
         self.criteria_count
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Self {
+        let short_period = match parameters[0] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        let long_period = match parameters[1] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        let signal_period = match parameters[2] {
+            Variable::Integer(value) => value,
+            _ => panic!("Invalid parameter type"),
+        };
+        Self::new(
+            short_period as i32,
+            long_period as i32,
+            signal_period as i32,
+        )
     }
 }

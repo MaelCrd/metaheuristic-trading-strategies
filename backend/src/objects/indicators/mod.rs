@@ -10,7 +10,7 @@ pub use combination::*;
 use sqlx::postgres::PgRow;
 pub use types::*;
 
-use crate::metaheuristic::VariableDefinition;
+use crate::metaheuristic::{Variable, VariableDefinition};
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 impl IndicatorTrait for Indicator {
@@ -223,6 +223,40 @@ impl IndicatorTrait for Indicator {
             Indicator::StochasticOscillator(indicator) => indicator.get_criteria_count(),
             Indicator::OnBalanceVolume(indicator) => indicator.get_criteria_count(),
             Indicator::IchimokuCloud(indicator) => indicator.get_criteria_count(),
+        }
+    }
+
+    fn clone_with_new_parameters(&self, parameters: &[Variable]) -> Indicator {
+        match self {
+            Indicator::MovingAverage(indicator) => {
+                Indicator::MovingAverage(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::ExponentialMovingAverage(indicator) => {
+                Indicator::ExponentialMovingAverage(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::RelativeStrengthIndex(indicator) => {
+                Indicator::RelativeStrengthIndex(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                Indicator::MovingAverageConvergenceDivergence(
+                    indicator.clone_with_new_parameters(parameters),
+                )
+            }
+            Indicator::BollingerBands(indicator) => {
+                Indicator::BollingerBands(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::FibonacciRetracement(indicator) => {
+                Indicator::FibonacciRetracement(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::StochasticOscillator(indicator) => {
+                Indicator::StochasticOscillator(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::OnBalanceVolume(indicator) => {
+                Indicator::OnBalanceVolume(indicator.clone_with_new_parameters(parameters))
+            }
+            Indicator::IchimokuCloud(indicator) => {
+                Indicator::IchimokuCloud(indicator.clone_with_new_parameters(parameters))
+            }
         }
     }
 }
