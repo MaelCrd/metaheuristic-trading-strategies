@@ -13,6 +13,7 @@ impl RelativeStrengthIndex {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 2,
         }
     }
 
@@ -26,6 +27,8 @@ impl RelativeStrengthIndex {
                 description: "The period of the Relative Strength Index".to_string(),
                 r#type: "integer".to_string(),
                 default: "14".to_string(),
+                min: Some("1".to_string()),
+                max: None,
             }],
         }
     }
@@ -73,5 +76,9 @@ impl IndicatorTrait for RelativeStrengthIndex {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

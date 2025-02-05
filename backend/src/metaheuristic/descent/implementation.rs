@@ -6,6 +6,7 @@ use crate::metaheuristic::objects::{
     MetaheuristicInfo, MetaheuristicTrait, Solution, Variable, VariableDefinition,
     VariableDefinitionInfo,
 };
+use crate::objects::{indicators::Indicator, klines::KlineCollection};
 
 #[derive(Clone, Debug)]
 pub struct MultiObjectiveDescent {
@@ -31,6 +32,36 @@ impl MultiObjectiveDescent {
             archive_size,
             num_objectives,
         }
+    }
+
+    pub fn new_from_json(
+        json: &serde_json::Value,
+        variable_definitions: Vec<VariableDefinition>,
+        num_objectives: usize,
+    ) -> Result<Self, String> {
+        let step_size_option = json.get("step_size");
+        let archive_size_option = json.get("archive_size");
+        if step_size_option.is_none() || archive_size_option.is_none() {
+            return Err("Missing parameters for the algorithm".to_string());
+        }
+
+        let step_size = step_size_option.unwrap().as_str().unwrap().parse::<f64>();
+        let archive_size = archive_size_option
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse::<usize>();
+        if !step_size.is_ok() || !archive_size.is_ok() {
+            return Err("Invalid parameters for the algorithm".to_string());
+        }
+
+        Ok(MultiObjectiveDescent {
+            step_size: step_size.unwrap(),
+            variable_definitions: variable_definitions,
+            max_iterations_without_improvement: 1000,
+            archive_size: archive_size.unwrap(),
+            num_objectives: num_objectives,
+        })
     }
 
     pub fn get_info() -> MetaheuristicInfo {
@@ -193,16 +224,33 @@ impl MultiObjectiveDescent {
         archive.truncate(self.archive_size);
     }
 
-    pub fn run<F>(&self, max_iterations: usize, evaluate: F) -> Vec<Solution>
+    pub fn run<F>(
+        &self,
+        max_iterations: usize,
+        evaluate: F,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
+    ) -> Vec<Solution>
     where
-        F: Fn(&[Variable]) -> Vec<f64>,
+        F: Fn(
+            &[Variable],
+            &Vec<KlineCollection>,
+            &Vec<Indicator>,
+            &Vec<Vec<VariableDefinition>>,
+        ) -> Vec<f64>,
     {
         let mut rng = rand::thread_rng();
         let mut archive: Vec<Solution> = Vec::new();
 
         // Initialize first solution
         let mut current = self.initialize_solution();
-        current.objectives = evaluate(&current.variables);
+        current.objectives = evaluate(
+            &current.variables,
+            kline_collections,
+            indicators,
+            variable_definitions_sep,
+        );
         self.update_archive(&mut archive, current.clone());
 
         let mut iterations_without_improvement = 0;
@@ -210,7 +258,12 @@ impl MultiObjectiveDescent {
         for _ in 0..max_iterations {
             // Generate and evaluate neighbor
             let mut neighbor = self.generate_neighbor(&current);
-            neighbor.objectives = evaluate(&neighbor.variables);
+            neighbor.objectives = evaluate(
+                &neighbor.variables,
+                kline_collections,
+                indicators,
+                variable_definitions_sep,
+            );
 
             // Update archive and check for improvement
             let archive_size_before = archive.len();
@@ -244,9 +297,26 @@ impl MultiObjectiveDescent {
 impl MetaheuristicTrait for MultiObjectiveDescent {
     fn run(
         &self,
-        num_iterations: usize,
-        evaluate: impl Fn(&[Variable]) -> Vec<f64> + Clone + Send + Sync,
+        num_generations: usize,
+        evaluate: impl Fn(
+                &[Variable],
+                &Vec<KlineCollection>,
+                &Vec<Indicator>,
+                &Vec<Vec<VariableDefinition>>,
+            ) -> Vec<f64>
+            + Clone
+            + Sync
+            + Send,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
     ) -> Vec<Solution> {
-        self.run(num_iterations, evaluate)
+        self.run(
+            num_generations,
+            evaluate,
+            kline_collections,
+            indicators,
+            variable_definitions_sep,
+        )
     }
 }

@@ -10,6 +10,7 @@ pub use combination::*;
 use sqlx::postgres::PgRow;
 pub use types::*;
 
+use crate::metaheuristic::VariableDefinition;
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 impl IndicatorTrait for Indicator {
@@ -24,6 +25,48 @@ impl IndicatorTrait for Indicator {
             Indicator::StochasticOscillator(indicator) => indicator.information(),
             Indicator::OnBalanceVolume(indicator) => indicator.information(),
             Indicator::IchimokuCloud(indicator) => indicator.information(),
+        }
+    }
+
+    fn get_params_variable_definitions(&self) -> Vec<VariableDefinition> {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.get_params_variable_definitions(),
+            Indicator::ExponentialMovingAverage(indicator) => {
+                indicator.get_params_variable_definitions()
+            }
+            Indicator::RelativeStrengthIndex(indicator) => {
+                indicator.get_params_variable_definitions()
+            }
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                indicator.get_params_variable_definitions()
+            }
+            Indicator::BollingerBands(indicator) => indicator.get_params_variable_definitions(),
+            Indicator::FibonacciRetracement(indicator) => {
+                indicator.get_params_variable_definitions()
+            }
+            Indicator::StochasticOscillator(indicator) => {
+                indicator.get_params_variable_definitions()
+            }
+            Indicator::OnBalanceVolume(indicator) => indicator.get_params_variable_definitions(),
+            Indicator::IchimokuCloud(indicator) => indicator.get_params_variable_definitions(),
+        }
+    }
+
+    fn get_all_variable_definitions(&self) -> Vec<VariableDefinition> {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::ExponentialMovingAverage(indicator) => {
+                indicator.get_all_variable_definitions()
+            }
+            Indicator::RelativeStrengthIndex(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                indicator.get_all_variable_definitions()
+            }
+            Indicator::BollingerBands(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::FibonacciRetracement(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::StochasticOscillator(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::OnBalanceVolume(indicator) => indicator.get_all_variable_definitions(),
+            Indicator::IchimokuCloud(indicator) => indicator.get_all_variable_definitions(),
         }
     }
 
@@ -164,6 +207,22 @@ impl IndicatorTrait for Indicator {
             Indicator::StochasticOscillator(indicator) => indicator.get_criteria(),
             Indicator::OnBalanceVolume(indicator) => indicator.get_criteria(),
             Indicator::IchimokuCloud(indicator) => indicator.get_criteria(),
+        }
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        match self {
+            Indicator::MovingAverage(indicator) => indicator.get_criteria_count(),
+            Indicator::ExponentialMovingAverage(indicator) => indicator.get_criteria_count(),
+            Indicator::RelativeStrengthIndex(indicator) => indicator.get_criteria_count(),
+            Indicator::MovingAverageConvergenceDivergence(indicator) => {
+                indicator.get_criteria_count()
+            }
+            Indicator::BollingerBands(indicator) => indicator.get_criteria_count(),
+            Indicator::FibonacciRetracement(indicator) => indicator.get_criteria_count(),
+            Indicator::StochasticOscillator(indicator) => indicator.get_criteria_count(),
+            Indicator::OnBalanceVolume(indicator) => indicator.get_criteria_count(),
+            Indicator::IchimokuCloud(indicator) => indicator.get_criteria_count(),
         }
     }
 }

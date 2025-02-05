@@ -19,6 +19,7 @@ impl IchimokuCloud {
             leading_span_a_values: Vec::new(),
             leading_span_b_values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 2,
         }
     }
 
@@ -33,18 +34,24 @@ impl IchimokuCloud {
                     description: "The period for the conversion line".to_string(),
                     r#type: "integer".to_string(),
                     default: "9".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "Base Period".to_string(),
                     description: "The period for the base line".to_string(),
                     r#type: "integer".to_string(),
                     default: "26".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "Lagging Span".to_string(),
                     description: "The period for the lagging span".to_string(),
                     r#type: "integer".to_string(),
                     default: "52".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
             ],
         }
@@ -138,5 +145,9 @@ impl IndicatorTrait for IchimokuCloud {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

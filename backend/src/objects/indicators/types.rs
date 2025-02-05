@@ -2,6 +2,7 @@ use serde::Serialize;
 use sqlx::postgres::PgRow;
 
 use crate::binance;
+use crate::metaheuristic::VariableDefinition;
 use crate::objects::{criteria::Criterion, klines::KlineCollection};
 
 #[derive(Debug, Clone)]
@@ -20,6 +21,39 @@ pub enum Indicator {
 pub trait IndicatorTrait {
     // Returns the info
     fn information(&self) -> IndicatorInformation;
+
+    // Returns the variable definitions
+    fn get_params_variable_definitions(&self) -> Vec<VariableDefinition> {
+        let info = self.information();
+        let mut variable_definitions: Vec<VariableDefinition> = Vec::new();
+        for parameter in info.parameters {
+            variable_definitions.push(match parameter.r#type.as_str() {
+                "float" => VariableDefinition::Float(
+                    parameter.min.unwrap_or("0".to_string()).parse().unwrap(),
+                    parameter.max.unwrap_or("400".to_string()).parse().unwrap(),
+                ),
+                "integer" => VariableDefinition::Integer(
+                    parameter.min.unwrap_or("0".to_string()).parse().unwrap(),
+                    parameter.max.unwrap_or("400".to_string()).parse().unwrap(),
+                ),
+                "boolean" => VariableDefinition::Boolean,
+                _ => VariableDefinition::Float(0.0, 0.0),
+            });
+        }
+
+        variable_definitions
+    }
+
+    // Returns all the variable definitions
+    fn get_all_variable_definitions(&self) -> Vec<VariableDefinition> {
+        let mut variable_definitions = self.get_params_variable_definitions();
+
+        for _ in 0..self.get_criteria_count() {
+            variable_definitions.push(VariableDefinition::Boolean);
+        }
+
+        variable_definitions
+    }
 
     // Returns the column names of the indicator
     fn column_names(&self) -> Vec<String>;
@@ -56,6 +90,9 @@ pub trait IndicatorTrait {
 
     // Get the criteria of the indicator
     fn get_criteria(&self) -> &Vec<Criterion>;
+
+    // Get the count of criteria
+    fn get_criteria_count(&self) -> i32;
 }
 
 impl Indicator {
@@ -200,6 +237,8 @@ pub struct IndicatorParameter {
     pub description: String,
     pub r#type: String,
     pub default: String,
+    pub min: Option<String>,
+    pub max: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -210,6 +249,8 @@ pub struct IndicatorInformation {
     pub parameters: Vec<IndicatorParameter>,
 }
 
+// Indicators
+
 #[derive(Debug, Clone)]
 pub struct MovingAverage {
     // Parameters
@@ -217,6 +258,7 @@ pub struct MovingAverage {
     // Values
     pub values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -227,6 +269,7 @@ pub struct ExponentialMovingAverage {
     // Values
     pub values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -237,6 +280,7 @@ pub struct RelativeStrengthIndex {
     // Values
     pub values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -251,6 +295,7 @@ pub struct MovingAverageConvergenceDivergence {
     pub signal_values: Vec<Option<f64>>,
     pub histogram_values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -264,6 +309,7 @@ pub struct BollingerBands {
     pub middle_band_values: Vec<Option<f64>>,
     pub lower_band_values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -274,6 +320,7 @@ pub struct FibonacciRetracement {
     // Values
     pub values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -286,6 +333,7 @@ pub struct StochasticOscillator {
     pub k_values: Vec<Option<f64>>,
     pub d_values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -296,6 +344,7 @@ pub struct OnBalanceVolume {
     // Values
     pub values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }
 
@@ -312,5 +361,6 @@ pub struct IchimokuCloud {
     pub leading_span_a_values: Vec<Option<f64>>,
     pub leading_span_b_values: Vec<Option<f64>>,
     // Criteria
+    pub criteria_count: i32,
     pub criteria: Vec<Criterion>,
 }

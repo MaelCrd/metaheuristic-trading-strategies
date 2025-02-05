@@ -6,6 +6,7 @@ use crate::metaheuristic::objects::{
     MetaheuristicInfo, MetaheuristicTrait, Solution, Variable, VariableDefinition,
     VariableDefinitionInfo,
 };
+use crate::objects::{indicators::Indicator, klines::KlineCollection};
 
 // Parallelize the NSGA-II algorithm using Rayon
 use rayon::prelude::*;
@@ -467,9 +468,24 @@ impl NSGAII {
     // }
 
     /// Run the NSGA-II algorithm
-    pub fn run<F>(&self, generations: usize, evaluate: F) -> Vec<Solution>
+    pub fn run<F>(
+        &self,
+        generations: usize,
+        evaluate: F,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
+    ) -> Vec<Solution>
     where
-        F: Fn(&[Variable]) -> Vec<f64> + Clone + Sync + Send,
+        F: Fn(
+                &[Variable],
+                &Vec<KlineCollection>,
+                &Vec<Indicator>,
+                &Vec<Vec<VariableDefinition>>,
+            ) -> Vec<f64>
+            + Clone
+            + Sync
+            + Send,
     {
         let mut population = self.initialize_population();
 
@@ -480,7 +496,12 @@ impl NSGAII {
 
         // Parallel evaluation of initial population
         population.par_iter_mut().for_each(|solution| {
-            solution.objectives = evaluate(&solution.variables);
+            solution.objectives = evaluate(
+                &solution.variables,
+                kline_collections,
+                indicators,
+                variable_definitions_sep,
+            );
         });
 
         for _ in 0..generations {
@@ -511,7 +532,12 @@ impl NSGAII {
 
             // Parallel evaluation of offspring
             offspring.par_iter_mut().for_each(|child| {
-                child.objectives = evaluate(&child.variables);
+                child.objectives = evaluate(
+                    &child.variables,
+                    kline_collections,
+                    indicators,
+                    variable_definitions_sep,
+                );
             });
 
             // Combine parent and offspring populations
@@ -546,8 +572,25 @@ impl MetaheuristicTrait for NSGAII {
     fn run(
         &self,
         num_generations: usize,
-        evaluate: impl Fn(&[Variable]) -> Vec<f64> + Clone + Sync + Send,
+        evaluate: impl Fn(
+                &[Variable],
+                &Vec<KlineCollection>,
+                &Vec<Indicator>,
+                &Vec<Vec<VariableDefinition>>,
+            ) -> Vec<f64>
+            + Clone
+            + Sync
+            + Send,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
     ) -> Vec<Solution> {
-        self.run(num_generations, evaluate)
+        self.run(
+            num_generations,
+            evaluate,
+            kline_collections,
+            indicators,
+            variable_definitions_sep,
+        )
     }
 }

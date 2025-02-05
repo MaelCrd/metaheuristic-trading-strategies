@@ -16,6 +16,7 @@ impl BollingerBands {
             middle_band_values: Vec::new(),
             lower_band_values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 3,
         }
     }
 
@@ -32,12 +33,16 @@ impl BollingerBands {
                     description: "The number of periods to use in the calculation.".to_string(),
                     r#type: "integer".to_string(),
                     default: "20".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "deviation".to_string(),
                     description: "The number of standard deviations to use in the calculation.".to_string(),
                     r#type: "float".to_string(),
                     default: "2.0".to_string(),
+                    min: Some("0.0".to_string()),
+                    max: None,
                 },
             ],
         }
@@ -100,5 +105,9 @@ impl IndicatorTrait for BollingerBands {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

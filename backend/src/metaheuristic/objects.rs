@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::descent::MultiObjectiveDescent;
 use super::nsga2::NSGAII;
+use crate::objects::{indicators::Indicator, klines::KlineCollection};
 
 /// Represents a variable in the optimization problem
 #[derive(Clone, Debug)]
@@ -93,7 +94,18 @@ pub trait MetaheuristicTrait {
     fn run(
         &self,
         num_generations: usize,
-        evaluate: impl Fn(&[Variable]) -> Vec<f64> + Clone + Sync + Send,
+        evaluate: impl Fn(
+                &[Variable],
+                &Vec<KlineCollection>,
+                &Vec<Indicator>,
+                &Vec<Vec<VariableDefinition>>,
+            ) -> Vec<f64>
+            + Clone
+            + Sync
+            + Send,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
     ) -> Vec<Solution>;
 }
 
@@ -101,13 +113,34 @@ impl MetaheuristicTrait for Metaheuristic {
     fn run(
         &self,
         num_generations: usize,
-        evaluate: impl Fn(&[Variable]) -> Vec<f64> + Clone + Sync + Send,
+        evaluate: impl Fn(
+                &[Variable],
+                &Vec<KlineCollection>,
+                &Vec<Indicator>,
+                &Vec<Vec<VariableDefinition>>,
+            ) -> Vec<f64>
+            + Clone
+            + Sync
+            + Send,
+        kline_collections: &Vec<KlineCollection>,
+        indicators: &Vec<Indicator>,
+        variable_definitions_sep: &Vec<Vec<VariableDefinition>>,
     ) -> Vec<Solution> {
         match self {
-            Metaheuristic::MultiObjectiveDescent(simple_descent) => {
-                simple_descent.run(num_generations, evaluate)
-            }
-            Metaheuristic::NSGAII(nsga2) => nsga2.run(num_generations, evaluate),
+            Metaheuristic::MultiObjectiveDescent(simple_descent) => simple_descent.run(
+                num_generations,
+                evaluate,
+                kline_collections,
+                indicators,
+                variable_definitions_sep,
+            ),
+            Metaheuristic::NSGAII(nsga2) => nsga2.run(
+                num_generations,
+                evaluate,
+                kline_collections,
+                indicators,
+                variable_definitions_sep,
+            ),
         }
     }
 }

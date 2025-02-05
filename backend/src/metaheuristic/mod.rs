@@ -5,4 +5,6 @@ mod objects;
 
 pub use descent::MultiObjectiveDescent;
 pub use nsga2::NSGAII;
-pub use objects::{Metaheuristic, MetaheuristicInfo, VariableDefinition};
+pub use objects::{
+    Metaheuristic, MetaheuristicInfo, MetaheuristicTrait, Variable, VariableDefinition,
+};

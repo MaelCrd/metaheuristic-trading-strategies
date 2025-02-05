@@ -15,6 +15,7 @@ impl ExponentialMovingAverage {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 2,
         }
     }
 
@@ -28,6 +29,8 @@ impl ExponentialMovingAverage {
                 description: "The number of periods to use in the calculation.".to_string(),
                 r#type: "integer".to_string(),
                 default: "20".to_string(),
+                min: Some("1".to_string()),
+                max: None,
             }],
         }
     }
@@ -75,5 +78,9 @@ impl IndicatorTrait for ExponentialMovingAverage {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

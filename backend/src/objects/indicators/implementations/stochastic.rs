@@ -15,6 +15,7 @@ impl StochasticOscillator {
             k_values: Vec::new(),
             d_values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 2,
         }
     }
 
@@ -29,12 +30,16 @@ impl StochasticOscillator {
                     description: "The period of the K line".to_string(),
                     r#type: "integer".to_string(),
                     default: "14".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "d_period".to_string(),
                     description: "The period of the D line".to_string(),
                     r#type: "integer".to_string(),
                     default: "3".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
             ],
         }
@@ -141,5 +146,9 @@ impl IndicatorTrait for StochasticOscillator {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

@@ -50,16 +50,16 @@ pub fn mh_nsga_ii() {
     println!("Starting optimization...");
 
     // Run optimization
-    let final_population = nsga2.run(200, evaluate);
-    let elapsed = start.elapsed();
+    // let final_population = nsga2.run(200, evaluate);
+    // let elapsed = start.elapsed();
 
-    // Print results
-    println!("Elapsed time: {:?}", elapsed);
+    // // Print results
+    // println!("Elapsed time: {:?}", elapsed);
 
-    println!("Final population ({}):", final_population.len());
-    for individual in final_population {
-        println!("{}", individual.show_short());
-    }
+    // println!("Final population ({}):", final_population.len());
+    // for individual in final_population {
+    //     println!("{}", individual.show_short());
+    // }
 }
 
 pub fn mh_descent() {
@@ -106,14 +106,14 @@ pub fn mh_descent() {
     println!("Starting optimization...");
 
     // Run optimization
-    let final_population = descent.run(200, evaluate);
-    let elapsed = start.elapsed();
+    // let final_population = descent.run(200, evaluate);
+    // let elapsed = start.elapsed();
 
-    // Print results
-    println!("Elapsed time: {:?}", elapsed);
+    // // Print results
+    // println!("Elapsed time: {:?}", elapsed);
 
-    println!("Final population ({}):", final_population.len());
-    for individual in final_population {
-        println!("{}", individual.show_short());
-    }
+    // println!("Final population ({}):", final_population.len());
+    // for individual in final_population {
+    //     println!("{}", individual.show_short());
+    // }
 }

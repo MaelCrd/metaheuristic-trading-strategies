@@ -24,6 +24,7 @@ impl MovingAverageConvergenceDivergence {
             signal_values: Vec::new(),
             histogram_values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 2,
         }
     }
 
@@ -38,18 +39,24 @@ impl MovingAverageConvergenceDivergence {
                     description: "Short period for MACD".to_string(),
                     r#type: "integer".to_string(),
                     default: "12".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "long_period".to_string(),
                     description: "Long period for MACD".to_string(),
                     r#type: "integer".to_string(),
                     default: "26".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
                 IndicatorParameter {
                     name: "signal_period".to_string(),
                     description: "Signal period for MACD".to_string(),
                     r#type: "integer".to_string(),
                     default: "9".to_string(),
+                    min: Some("1".to_string()),
+                    max: None,
                 },
             ],
         }
@@ -124,5 +131,9 @@ impl IndicatorTrait for MovingAverageConvergenceDivergence {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }

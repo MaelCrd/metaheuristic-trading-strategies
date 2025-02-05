@@ -3,7 +3,9 @@ use sqlx::Row;
 
 use crate::objects::{
     criteria::{CompareCriterion, Criterion, CrossCriterion},
-    indicators::{IndicatorInformation, IndicatorParameter, IndicatorTrait, MovingAverage},
+    indicators::{
+        IndicatorInformation, IndicatorParameter, IndicatorTrait, MovingAverage, VariableDefinition,
+    },
     klines::KlineCollection,
 };
 
@@ -13,6 +15,7 @@ impl MovingAverage {
             period,
             values: Vec::new(),
             criteria: Vec::new(),
+            criteria_count: 3,
         }
     }
 
@@ -26,6 +29,8 @@ impl MovingAverage {
                 description: "The period of the moving average".to_string(),
                 r#type: "integer".to_string(),
                 default: "20".to_string(),
+                min: Some("1".to_string()),
+                max: None,
             }],
         }
     }
@@ -90,7 +95,9 @@ impl IndicatorTrait for MovingAverage {
 
     fn calculate_criteria(&mut self, kline_collection: &KlineCollection) {
         // If vec is empty, calculate the criteria
-        if self.criteria.is_empty() {
+        if self.criteria.len() != self.criteria_count as usize {
+            self.criteria.clear();
+
             // Calculate the criteria
             let values_iter = self.values.iter().filter_map(|&x| x);
 
@@ -120,5 +127,9 @@ impl IndicatorTrait for MovingAverage {
 
     fn get_criteria(&self) -> &Vec<Criterion> {
         &self.criteria
+    }
+
+    fn get_criteria_count(&self) -> i32 {
+        self.criteria_count
     }
 }
